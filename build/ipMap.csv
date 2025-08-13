@@ -4,3 +4,13 @@ CTRL\_REG,0x00,RW,RX\_EN,[1],RW,Receiver enable,"0: OFF, 1: ON"
 CTRL\_REG,0x00,RW,BAUD\_DIV,[15:8],RW,Baud rate divisor,-
 STATUS\_REG,0x04,RO,TX\_FULL,[0],RO,TX buffer status,"0: NOT\_FULL, 1: FULL"
 STATUS\_REG,0x04,RO,RX\_EMPTY,[1],RO,RX buffer status,"0: NOT\_EMPTY, 1: EMPTY"
+,,,,,,,
+|l|} Register,Offset,Type,Field,Bits,Access,Description,Enum Values
+PERIOD\_REG,0x00,RW,PERIOD,[31:0],RW,PWM period (clocks),-
+DUTY\_REG,0x04,RW,DUTY\_CYCLE,[31:0],RW,Duty cycle value,-
+,,,
+IP,Base Address,Register,Full Address
+IP\_A,0x4000\_0000,CTRL\_REG,0x4000\_0000
+IP\_A,0x4000\_0000,STATUS\_REG,0x4000\_0004
+IP\_B,0x4000\_1000,PERIOD\_REG,0x4000\_1000
+IP\_B,0x4000\_1000,DUTY\_REG,0x4000\_1004
