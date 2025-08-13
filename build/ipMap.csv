@@ -1,0 +1,6 @@
+|p{3.2cm}|} Register,Offset,Type,Field,Bits,Access,Description,Enum Values
+CTRL\_REG,0x00,RW,TX\_EN,[0],RW,Transmitter enable,"0: OFF, 1: ON"
+CTRL\_REG,0x00,RW,RX\_EN,[1],RW,Receiver enable,"0: OFF, 1: ON"
+CTRL\_REG,0x00,RW,BAUD\_DIV,[15:8],RW,Baud rate divisor,-
+STATUS\_REG,0x04,RO,TX\_FULL,[0],RO,TX buffer status,"0: NOT\_FULL, 1: FULL"
+STATUS\_REG,0x04,RO,RX\_EMPTY,[1],RO,RX buffer status,"0: NOT\_EMPTY, 1: EMPTY"
