@@ -1,0 +1,58 @@
+\documentclass{article}
+\usepackage{multirow}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in} % Defines standard A4 page with 1-inch margins
+
+\begin{document}
+
+\subsection*{IP\_A: UART Controller}
+% Using 'p' columns for Description and Enum Values to wrap text
+\begin{tabular}{|l|l|l|l|l|l|p{3.5cm}|p{3.2cm}|}
+\hline
+\textbf{Register} & \textbf{Offset} & \textbf{Type} & \textbf{Field} & \textbf{Bits} & \textbf{Access} & \textbf{Description} & \textbf{Enum Values} \\
+\hline
+\multirow{3}{*}{CTRL\_REG} & \multirow{3}{*}{0x00} & \multirow{3}{*}{RW} & TX\_EN & [0] & RW & Transmitter enable & 0: OFF, 1: ON \\
+\cline{4-8}
+& & & RX\_EN & [1] & RW & Receiver enable & 0: OFF, 1: ON \\
+\cline{4-8}
+& & & BAUD\_DIV & [15:8] & RW & Baud rate divisor & - \\
+\hline
+\multirow{2}{*}{STATUS\_REG} & \multirow{2}{*}{0x04} & \multirow{2}{*}{RO} & TX\_FULL & [0] & RO & TX buffer status & 0: NOT\_FULL, 1: FULL \\
+\cline{4-8}
+& & & RX\_EMPTY & [1] & RO & RX buffer status & 0: NOT\_EMPTY, 1: EMPTY \\
+\hline
+\end{tabular}
+
+\vspace{1cm}
+
+\subsection*{IP\_B: PWM Controller}
+% Using a 'p' column for Description to wrap text
+\begin{tabular}{|l|l|l|l|l|l|p{4cm}|l|}
+\hline
+\textbf{Register} & \textbf{Offset} & \textbf{Type} & \textbf{Field} & \textbf{Bits} & \textbf{Access} & \textbf{Description} & \textbf{Enum Values} \\
+\hline
+PERIOD\_REG & 0x00 & RW & PERIOD & [31:0] & RW & PWM period (clocks) & - \\
+\hline
+DUTY\_REG & 0x04 & RW & DUTY\_CYCLE & [31:0] & RW & Duty cycle value & - \\
+\hline
+\end{tabular}
+
+\vspace{1cm}
+
+\subsection*{System Address Map}
+% This table is narrower and likely already fits
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{IP} & \textbf{Base Address} & \textbf{Register} & \textbf{Full Address} \\
+\hline
+\multirow{2}{*}{IP\_A} & \multirow{2}{*}{0x4000\_0000} & CTRL\_REG & 0x4000\_0000 \\
+\cline{3-4}
+& & STATUS\_REG & 0x4000\_0004 \\
+\hline
+\multirow{2}{*}{IP\_B} & \multirow{2}{*}{0x4000\_1000} & PERIOD\_REG & 0x4000\_1000 \\
+\cline{3-4}
+& & DUTY\_REG & 0x4000\_1004 \\
+\hline
+\end{tabular}
+
+\end{document}
