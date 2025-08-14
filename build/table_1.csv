@@ -1,0 +1,12 @@
+Register,Offset,Field,Bits,Access\_Policy,Volatile,reset,Description,Enum Values
+CTRL,0x0000,PRESCALER,[1:0],RW,false,'h0,Controls,0:100Hz; 1:500Hz
+CTRL,0x0000,MODE,[3:2],RW,false,'h0,Select,0:Mode\_A; 1:Mode\_B
+CTRL,0x0000,MASTER,[4],RW,true,'h0,Selects,
+CTRL,0x0000,DORD,[5],RW,false,'h0,Dord d,
+CTRL,0x0000,ENABLE,[6],RW,false,'h0,Setting,
+CTRL,0x0000,CLK2X,[7],RW,false,'h0,When th,
+INTCTRL,0x0004,INTLVL,[1:0],RW,false,'h0,These b,0:Inter; 1:NoInter
+STATUS,0x0008,WRCOL,[6],RO,true,'h0,,
+STATUS,0x0008,IF,[7],RO,true,'h0,,
+DATA,0x0012,WDATA,[8:0],WO,false,'h0,,
+DATA,0x0012,RDATA,[16:8],RW,true,'h0,,
