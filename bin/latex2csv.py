@@ -7,8 +7,12 @@ def extract_table_with_label(latex_content, target_label):
     """
     Extract a specific table by its label
 
-    latex_content: latex content inside the .text
-    target_label:  label that is gonna be used to search for
+    Args:
+        latex_content: latex content inside the .text
+        target_label:  label that is gonna be used to search for
+
+    Returns:
+        table with match of ref
     """
     # Pattern to match table with specific label
     pattern = r'\\begin{table}.*?\\label{' + re.escape(target_label) + r'}.*?\\begin{tabular}\{[^}]*\}(.*?)\\end{tabular}.*?\\end{table}'
@@ -20,7 +24,13 @@ def extract_table_with_label(latex_content, target_label):
 
 def extract_references_from_table(table_content):
     """
-    Extract references from table content (looking for \ref{} commands and other reference patterns)
+    Extract references from table content
+
+    Args:
+        table: table to extract refs from
+
+    Returns:
+        list with refs
     """
     references = []
     
@@ -41,6 +51,12 @@ def extract_references_from_table(table_content):
 def clean_table_content(table_content):
     """
     Clean LaTeX table content and convert to CSV-ready format
+
+    Args:
+        table:  table input
+
+    Returns:
+        clean table fitting the csv format
     """
     table_content = table_content.strip()
     
@@ -98,6 +114,10 @@ def clean_table_content(table_content):
 def save_table_to_csv(csv_rows, output_file):
     """
     Save CSV rows to file
+
+    Args:
+        csv rows : clean csv table
+        output_file : name of the file to save/create
     """
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
@@ -110,6 +130,13 @@ def save_table_to_csv(csv_rows, output_file):
 def process_latex_tables(latex_content, output_dir="build"):
     """
     Main function to process LaTeX tables based on the system address map
+
+    Args:
+        latex_content : raw data inside .text
+        output_dir : dir to save result
+
+    Returns:
+        True if operation sucessufl
     """
     print("Processing LaTeX tables...\n")
     
@@ -127,7 +154,7 @@ def process_latex_tables(latex_content, output_dir="build"):
     references = extract_references_from_table(main_table_content)
     print(f"Found references: {references}")
     
-    #Go through the refs
+    #go through the refs
     for idx, ref in enumerate(references):
         #get table with certain label code
         table = extract_table_with_label(latex_content, target_label=ref)
