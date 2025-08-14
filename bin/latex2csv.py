@@ -128,16 +128,19 @@ def process_latex_tables(latex_content, output_dir="build"):
     print(f"Found references: {references}")
     
     #Go through the refs
-    for ref in references:
+    for idx, ref in enumerate(references):
+        #get table with certain label code
         table = extract_table_with_label(latex_content, target_label=ref)
 
+        #keep it clean fit for an csv
         table_csv = clean_table_content(table_content=table)
 
-        file_name = os.path.join(output_dir, f"table_{ref}.csv")
-
+        #save on an table
+        file_name = os.path.join(output_dir, f"table_{idx}.csv")
         save_table_to_csv(csv_rows=table_csv, output_file=file_name)
+        print(f"Table {ref} was created with name table_{idx}.csv\n")
 
-
+    print("End of operation")
     return True
 
 def main():
