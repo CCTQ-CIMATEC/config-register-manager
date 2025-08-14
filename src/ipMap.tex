@@ -1,0 +1,53 @@
+\documentclass{article}
+\usepackage{tabularx} % Para tabelas com largura ajustável
+\usepackage{array}    % Para definir larguras de coluna
+\usepackage{ragged2e} % Para justificação de texto
+\usepackage{graphicx} % Required for inserting images
+
+\title{teste latex}
+\author{gustavosantiago1018 }
+\date{August 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+
+\begin{table}[h]
+\centering
+\caption{System Address Map}
+\label{tab:system_address_map}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{IP} & \textbf{Description} & \textbf{Base Address} & \textbf{ref} \\ \hline
+IP\_A & IP\_A description & 0x4000\_0000  & tabela\_IP\_A \\ \hline
+IP\_B & IP\_B description & 0x4000\_1000  & tabela\_IP\_B \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{tabela\_IP\_A}
+\label{tab:tabela\_IP\_A}
+\fontsize{7}{10}\selectfont % tamanho 8pt, espaçamento entre linhas 10pt
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{Register} & \textbf{Offset} & \textbf{Field} & \textbf{Bits} & \textbf{Access\_Policy} & \textbf{Volatile} & \textbf{reset} & \textbf{Description} & \textbf{Enum Values} 
+\\ \hline
+CTRL    & 0x0000 & PRESCALER & [1:0]  & RW  & false & 'h0  & Controls & 0:100Hz; 1:500Hz       \\ \cline{3-9}
+        &        & MODE      & [3:2]  & RW  & false & 'h0  & Select   & 0:Mode\_A; 1:Mode\_B   \\ \cline{3-9}
+        &        & MASTER    & [4]    & RW  & true  & 'h0  & Selects  &                        \\ \cline{3-9}
+        &        & DORD      & [5]    & RW  & false & 'h0  & Dord d   &                        \\ \cline{3-9}
+        &        & ENABLE    & [6]    & RW  & false & 'h0  & Setting  &                        \\ \cline{3-9}  
+        &        & CLK2X     & [7]    & RW  & false & 'h0  & When th  &                        \\ \hline  
+INTCTRL & 0x0004 & INTLVL    & [1:0]  & RW  & false & 'h0  & These b  & 0:Inter; 1:NoInter     \\ \hline
+STATUS  & 0x0008 & WRCOL     & [6]    & RO  & true  & 'h0  &          &                        \\ \cline{3-9}
+        &        & IF        & [7]    & RO  & true  & 'h0  &          &                        \\ \hline
+DATA    & 0x0012 & WDATA     & [8:0]  & WO  & false & 'h0  &          &                        \\ \cline{3-9}
+        &        & RDATA     & [16:8] & RW  & true  & 'h0  &          &                        \\ \hline
+\end{tabular}
+\end{table}
+
+\end{document}
