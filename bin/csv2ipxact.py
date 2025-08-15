@@ -349,9 +349,6 @@ def convert_csv_to_ipxact(csv_file, output_file, component_name=None, base_addre
 
 def main():
     parser = argparse.ArgumentParser(description='Convert CSV register tables to IP-XACT XML format')
-    parser.add_argument('input', help='Input CSV file or directory containing CSV files')
-    parser.add_argument('-o', '--output', help='Output directory (default: ipxact_output)')
-    parser.add_argument('-c', '--component', help='Component name (auto-generated from filename if not specified)')
     parser.add_argument('-b', '--base-address', default='0x40000000', help='Base address (default: 0x40000000)')
     
     args = parser.parse_args()
