@@ -88,7 +88,7 @@ def clean_table_content(table_content):
             # Remove remaining LaTeX commands
             cell = re.sub(r'\\[a-zA-Z]+(?:\{[^}]*\})*', '', cell)
             cell = re.sub(r'\s+', ' ', cell)
-            cell = cell.lower()
+            print(cell)
             cleaned_cells.append(cell.strip())
             
         
@@ -170,9 +170,7 @@ def process_latex_tables(latex_content, output_dir="build"):
         table_csv = clean_table_content(table_content=table)
 
         #save on an table
-
         ref_str = ref.replace("table:", "RegisterMap_", 1)
-
         file_name = os.path.join(output_dir, f"{ref_str}.csv")
         save_table_to_csv(csv_rows=table_csv, output_file=file_name)
         print(f"Table {ref} was created with name {ref}.csv\n")

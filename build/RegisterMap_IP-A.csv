@@ -1,12 +1,12 @@
-register,offset,field,bits,access\_policy,volatile,reset,description,enum values
-ctrl,0x0000,prescaler,[1:0],rw,false,'h0,controls,0:100hz; 1:500hz
-ctrl,0x0000,mode,[3:2],rw,false,'h0,select,0:mode\_a; 1:mode\_b
-ctrl,0x0000,master,[4],rw,true,'h0,selects,
-ctrl,0x0000,dord,[5],rw,false,'h0,dord d,
-ctrl,0x0000,enable,[6],rw,false,'h0,setting,
-ctrl,0x0000,clk2x,[7],rw,false,'h0,when th,
-intctrl,0x0004,intlvl,[1:0],rw,false,'h0,these b,0:inter; 1:nointer
-status,0x0008,wrcol,[6],ro,true,'h0,,
-status,0x0008,if,[7],ro,true,'h0,,
-data,0x0012,wdata,[8:0],wo,false,'h0,,
-data,0x0012,rdata,[16:8],rw,true,'h0,,
+Register,Offset,Field,Bits,Access\_Policy,Volatile,reset,Description,Enum Values
+CTRL,0x0000,PRESCALER,[1:0],RW,false,'h0,Controls,0:100Hz; 1:500Hz
+CTRL,0x0000,MODE,[3:2],RW,false,'h0,Select,0:Mode\_A; 1:Mode\_B
+CTRL,0x0000,MASTER,[4],RW,true,'h0,Selects,
+CTRL,0x0000,DORD,[5],RW,false,'h0,Dord d,
+CTRL,0x0000,ENABLE,[6],RW,false,'h0,Setting,
+CTRL,0x0000,CLK2X,[7],RW,false,'h0,When th,
+INTCTRL,0x0004,INTLVL,[1:0],RW,false,'h0,These b,0:Inter; 1:NoInter
+STATUS,0x0008,WRCOL,[6],RO,true,'h0,,
+STATUS,0x0008,IF,[7],RO,true,'h0,,
+DATA,0x0012,WDATA,[8:0],WO,false,'h0,,
+DATA,0x0012,RDATA,[16:8],RW,true,'h0,,

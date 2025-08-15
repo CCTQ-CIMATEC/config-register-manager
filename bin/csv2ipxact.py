@@ -258,7 +258,8 @@ def read_csv_data(csv_file):
             # Convert keys to lowercase for consistency
             row_data = {k.lower().strip(): v.strip() for k, v in row.items()}
             
-            register = row_data.get('register', '').strip()
+            register = row_data.get('register', '').strip().lower() #maybe
+
             if not register:
                 continue
                 
@@ -270,7 +271,7 @@ def read_csv_data(csv_file):
             
             # Add field data
             field_data = {
-                'field': row_data.get('field', ''),
+                'field': row_data.get('field', '').lower(), # deve funcionar
                 'bits': row_data.get('bits', ''),
                 'access_policy': row_data.get('access_policy', row_data.get('access policy', 'RW')),
                 'volatile': row_data.get('volatile', 'false'),
