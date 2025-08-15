@@ -1,0 +1,12 @@
+register,offset,field,bits,access\_policy,volatile,reset,description,enum values
+ctrl,0x0000,prescaler,[1:0],rw,false,'h0,controls,0:100hz; 1:500hz
+ctrl,0x0000,mode,[3:2],rw,false,'h0,select,0:mode\_a; 1:mode\_b
+ctrl,0x0000,master,[4],rw,true,'h0,selects,
+ctrl,0x0000,dord,[5],rw,false,'h0,dord d,
+ctrl,0x0000,enable,[6],rw,false,'h0,setting,
+ctrl,0x0000,clk2x,[7],rw,false,'h0,when th,
+intctrl,0x0004,intlvl,[1:0],rw,false,'h0,these b,0:inter; 1:nointer
+status,0x0008,wrcol,[6],ro,true,'h0,,
+status,0x0008,if,[7],ro,true,'h0,,
+data,0x0012,wdata,[8:0],wo,false,'h0,,
+data,0x0012,rdata,[16:8],rw,true,'h0,,

@@ -1,0 +1,10 @@
+register,offset,field,bits,access\_policy,volatile,reset,description,enum values
+ctrl2,0x1000,mode2,[1:0],rw,false,'h1,operation mode,0:idle; 1:run; 2:sleep
+ctrl2,0x1000,priority,[3:2],rw,false,'h0,priority level,0:low; 1:med; 2:high
+ctrl2,0x1000,enable2,[4],rw,false,'h0,enable block,
+ctrl2,0x1000,resetn,[5],rw,true,'h1,active-low reset,
+cfg,0x1004,clockdiv,[7:0],rw,false,'h2,clock divider,
+stat2,0x1008,err,[0],ro,true,'h0,error flag,
+stat2,0x1008,ready,[1],ro,true,'h1,ready status,
+data2,0x1010,in,[15:0],wo,false,'h0,input data,
+data2,0x1010,out,[31:16],rw,true,'h0,output data,
