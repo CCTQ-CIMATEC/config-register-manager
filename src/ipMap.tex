@@ -44,7 +44,7 @@ IP-B & IP\_B description & 0x4000\_1000  & \ref{table:IP-B} \\ \hline
         &        & CLK2X     & [7]    & RW  & false & 'h0  & When th  &                        \\ \hline  
 INTCTRL & 0x0004 & INTLVL    & [1:0]  & RW  & false & 'h0  & These b  & 0:Inter; 1:NoInter     \\ \hline
 \multirow{2}{*}{STATUS} & \multirow{2}{*}{0x0008} & WRCOL     & [6]    & RO  & true  & 'h0  &          &                        \\ \cline{3-9}
-        &        & IF        & [7]    & RO  & true  & 'h0  &          &                        \\ \hline
+        &        & IF_field        & [7]    & RO  & true  & 'h0  &          &                        \\ \hline
 \multirow{2}{*}{DATA} & \multirow{2}{*}{0x0012} & WDATA     & [8:0]  & WO  & false & 'h0  &          &                        \\ \cline{3-9}
         &        & RDATA     & [16:8] & RW  & true  & 'h0  &          &                        \\ \hline
 \end{tabular}
