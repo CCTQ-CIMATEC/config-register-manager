@@ -142,7 +142,7 @@
       </ipxact:addressBlock>
       <ipxact:addressBlock>
         <ipxact:name>IP-B</ipxact:name>
-        <ipxact:baseAddress>0x40000000</ipxact:baseAddress>
+        <ipxact:baseAddress>0x40001000</ipxact:baseAddress>
         <ipxact:range>0x1014</ipxact:range>
         <ipxact:width>32</ipxact:width>
         <ipxact:register>
