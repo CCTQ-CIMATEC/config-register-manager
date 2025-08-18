@@ -41,11 +41,11 @@
             <ipxact:description>Select</ipxact:description>
             <ipxact:enumeratedValues>
               <ipxact:enumeratedValue>
-                <ipxact:name>Mode\_A</ipxact:name>
+                <ipxact:name>Mode A</ipxact:name>
                 <ipxact:value>0</ipxact:value>
               </ipxact:enumeratedValue>
               <ipxact:enumeratedValue>
-                <ipxact:name>Mode\_B</ipxact:name>
+                <ipxact:name>Mode B</ipxact:name>
                 <ipxact:value>1</ipxact:value>
               </ipxact:enumeratedValue>
             </ipxact:enumeratedValues>
@@ -110,14 +110,14 @@
             <ipxact:name>wrcol</ipxact:name>
             <ipxact:bitOffset>6</ipxact:bitOffset>
             <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>read-only</ipxact:access>
             <ipxact:volatile>true</ipxact:volatile>
           </ipxact:field>
           <ipxact:field>
             <ipxact:name>if</ipxact:name>
             <ipxact:bitOffset>7</ipxact:bitOffset>
             <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>read-only</ipxact:access>
             <ipxact:volatile>true</ipxact:volatile>
           </ipxact:field>
         </ipxact:register>
@@ -129,7 +129,7 @@
             <ipxact:name>wdata</ipxact:name>
             <ipxact:bitOffset>0</ipxact:bitOffset>
             <ipxact:bitWidth>9</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>write-only</ipxact:access>
           </ipxact:field>
           <ipxact:field>
             <ipxact:name>rdata</ipxact:name>
@@ -245,7 +245,7 @@
             <ipxact:name>err</ipxact:name>
             <ipxact:bitOffset>0</ipxact:bitOffset>
             <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>read-only</ipxact:access>
             <ipxact:description>Error flag</ipxact:description>
             <ipxact:volatile>true</ipxact:volatile>
           </ipxact:field>
@@ -253,7 +253,7 @@
             <ipxact:name>ready</ipxact:name>
             <ipxact:bitOffset>1</ipxact:bitOffset>
             <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>read-only</ipxact:access>
             <ipxact:resets>
               <ipxact:reset>
                 <ipxact:resetTypeRef>HARD</ipxact:resetTypeRef>
@@ -272,7 +272,7 @@
             <ipxact:name>in</ipxact:name>
             <ipxact:bitOffset>0</ipxact:bitOffset>
             <ipxact:bitWidth>16</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>write-only</ipxact:access>
             <ipxact:description>Input data</ipxact:description>
           </ipxact:field>
           <ipxact:field>

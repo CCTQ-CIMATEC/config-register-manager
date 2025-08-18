@@ -287,7 +287,7 @@ def convert_all_csv_to_ipxact(base_address="0x40000000", bus_size="32"):
     """Convert all CSV files to a single IP-XACT XML file"""
     
     build_path = Path("build")
-    csv_files = list(build_path.glob('*.csv'))
+    csv_files = list(build_path.glob('RegisterMap_*.csv'))
     
     if not csv_files:
         print(f"No CSV files found in directory: {build_path}")
