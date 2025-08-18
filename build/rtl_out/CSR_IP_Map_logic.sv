@@ -1,4 +1,4 @@
-// Lógica CSR_IP_Map - Gerado automaticamente em 2025-08-18 09:56:22
+// Lógica CSR_IP_Map - Gerado automaticamente em 2025-08-18 10:57:19
 // Lógica dos registradores CSR
 
     //--------------------------------------------------------------------------
@@ -89,7 +89,7 @@
             struct {
                 logic next;
                 logic load_next;
-            } if;
+            } if_field;
         } status;
         struct {
             struct {
@@ -171,7 +171,7 @@
             } wrcol;
             struct {
                 logic value;
-            } if;
+            } if_field;
         } status;
         struct {
             struct {
@@ -596,29 +596,29 @@
     end
     assign hwif_out.status.wrcol.value = field_storage.status.wrcol.value;
 
-    // Field: CSR_IP_Map.status.if
+    // Field: CSR_IP_Map.status.if_field
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.status.if.value;
+        next_c = field_storage.status.if_field.value;
         load_next_c = '0;
-        if(hwif_in.status.if.we) begin // HW Write - we
-            next_c = hwif_in.status.if.next;
+        if(hwif_in.status.if_field.we) begin // HW Write - we
+            next_c = hwif_in.status.if_field.next;
             load_next_c = '1;
         end
-        field_combo.status.if.next = next_c;
-        field_combo.status.if.load_next = load_next_c;
+        field_combo.status.if_field.next = next_c;
+        field_combo.status.if_field.load_next = load_next_c;
     end
     always_ff @(posedge clk) begin
         if(rst) begin
-            field_storage.status.if.value <= 1'h0;
+            field_storage.status.if_field.value <= 1'h0;
         end else begin
-            if(field_combo.status.if.load_next) begin
-                field_storage.status.if.value <= field_combo.status.if.next;
+            if(field_combo.status.if_field.load_next) begin
+                field_storage.status.if_field.value <= field_combo.status.if_field.next;
             end
         end
     end
-    assign hwif_out.status.if.value = field_storage.status.if.value;
+    assign hwif_out.status.if_field.value = field_storage.status.if_field.value;
 
     // Field: CSR_IP_Map.data.wdata
     always_comb begin

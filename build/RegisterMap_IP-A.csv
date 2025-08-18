@@ -7,6 +7,6 @@ CTRL,0x0000,ENABLE,[6],RW,false,'h0,Setting,
 CTRL,0x0000,CLK2X,[7],RW,false,'h0,When th,
 INTCTRL,0x0004,INTLVL,[1:0],RW,false,'h0,These b,0:Inter; 1:NoInter
 STATUS,0x0008,WRCOL,[6],RO,true,'h0,,
-STATUS,0x0008,IF,[7],RO,true,'h0,,
+STATUS,0x0008,IF_field,[7],RO,true,'h0,,
 DATA,0x0012,WDATA,[8:0],WO,false,'h0,,
 DATA,0x0012,RDATA,[16:8],RW,true,'h0,,

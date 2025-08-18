@@ -1,4 +1,4 @@
-// Package CSR_IP_Map_pkg - Gerado automaticamente em 2025-08-18 09:56:22
+// Package CSR_IP_Map_pkg - Gerado automaticamente em 2025-08-18 10:57:19
 // Estruturas typedef para interface CSR
 
 package CSR_IP_Map_pkg;
@@ -37,7 +37,7 @@ package CSR_IP_Map_pkg;
     typedef struct {
         logic next;
         logic we;
-    } CSR_IP_Map__status__if__in_t;
+    } CSR_IP_Map__status__if_field__in_t;
 
     typedef struct {
         logic [8:0] next;
@@ -63,7 +63,7 @@ package CSR_IP_Map_pkg;
 
     typedef struct {
         CSR_IP_Map__status__wrcol__in_t wrcol;
-        CSR_IP_Map__status__if__in_t if;
+        CSR_IP_Map__status__if_field__in_t if_field;
     } CSR_IP_Map__status__in_t;
 
     typedef struct {
@@ -146,7 +146,7 @@ package CSR_IP_Map_pkg;
 
     typedef struct {
         logic value;
-    } CSR_IP_Map__status__if__out_t;
+    } CSR_IP_Map__status__if_field__out_t;
 
     typedef struct {
         logic [8:0] value;
@@ -187,7 +187,7 @@ package CSR_IP_Map_pkg;
 
     typedef struct {
         CSR_IP_Map__status__wrcol__out_t wrcol;
-        CSR_IP_Map__status__if__out_t if;
+        CSR_IP_Map__status__if_field__out_t if_field;
     } CSR_IP_Map__status__out_t;
 
     typedef struct {

@@ -259,7 +259,7 @@
             <ipxact:volatile>true</ipxact:volatile>
           </ipxact:field>
           <ipxact:field>
-            <ipxact:name>if</ipxact:name>
+            <ipxact:name>if_field</ipxact:name>
             <ipxact:bitOffset>7</ipxact:bitOffset>
             <ipxact:bitWidth>1</ipxact:bitWidth>
             <ipxact:access>read-only</ipxact:access>
