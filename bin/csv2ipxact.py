@@ -210,11 +210,11 @@ class IPXACT2022Generator:
         
         return field
     
-    def create_address_block(self, csv_name, registers, base_address="0x40000000", bus_size="32"):
+    def create_address_block(self, csv_name, registers, base_address, bus_size="32"):
         """Create an address block for a specific CSV table"""
         address_block = ET.Element('ipxact:addressBlock')
         
-        # Address block name (use CSV table name)
+        # Address block name
         block_name = ET.SubElement(address_block, 'ipxact:name')
         block_name.text = csv_name.replace("RegisterMap_", "", 1)
         
@@ -222,8 +222,8 @@ class IPXACT2022Generator:
         base_addr = ET.SubElement(address_block, 'ipxact:baseAddress')
         base_addr.text = base_address
         
-        # Range (calculate from registers)
-        max_offset = 0x1000  # Default 4KB
+        # Range
+        max_offset = 0x1000
         for reg in registers:
             offset_str = reg.find('ipxact:addressOffset').text
             offset = int(offset_str, 0)
@@ -283,14 +283,23 @@ def read_csv_data(csv_file):
     
     return registers_data
 
-def convert_all_csv_to_ipxact(base_address="0x40000000", bus_size="32"):
+def convert_all_csv_to_ipxact(bus_size="32"):
     """Convert all CSV files to a single IP-XACT XML file"""
     
     build_path = Path("build")
-    csv_files = list(build_path.glob('*.csv'))
-    
+    csv_files = list(build_path.glob('RegisterMap_*.csv'))
+
+    #pura gambiarra
+    base_addresses = {}
+    with open ("build/table_main.csv", mode="r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            row["IP"] = re.sub("IP ", "IP-", row["IP"])
+            row["Base Address"] = re.sub(" ", "", row["Base Address"])
+            base_addresses[row["IP"]] = row["Base Address"]
+            
     if not csv_files:
-        print(f"No CSV files found in directory: {build_path}")
+        print(f"No IPs specific CSV files found in directory: {build_path}")
         return False
     
     print(f"Found {len(csv_files)} CSV files")
@@ -334,9 +343,10 @@ def convert_all_csv_to_ipxact(base_address="0x40000000", bus_size="32"):
                 registers.append(register)
                 print(f"    Created register: {reg_name} at {reg_data['offset']}")
             
-            # Create address block for this CSV table
-            csv_name = csv_file.stem  # Use CSV filename without extension
-            address_block = generator.create_address_block(csv_name, registers, base_address, bus_size)
+            # Creation of address block
+            csv_name = csv_file.stem  # remove extension
+            ip_name = re.sub(r'RegisterMap_', '', csv_name)
+            address_block = generator.create_address_block(csv_name, registers, base_addresses.get(ip_name), bus_size)
             memory_map.append(address_block)
             
             print(f"  Created address block: {csv_name}")
@@ -369,13 +379,11 @@ def convert_all_csv_to_ipxact(base_address="0x40000000", bus_size="32"):
 
 def main():
     parser = argparse.ArgumentParser(description='Convert CSV register tables to IP-XACT 2022 XML format')
-    parser.add_argument('-b', '--base-address', default='0x40000000', help='Base address (default: 0x40000000)')
     parser.add_argument('-s', '--bus-size', default='32', help='size of bus (default: 32)')
 
     args = parser.parse_args()
 
-    # Convert all CSV files to a single IP-XACT file
-    convert_all_csv_to_ipxact(args.base_address, args.bus_size)
+    convert_all_csv_to_ipxact(args.bus_size)
 
 if __name__ == "__main__":
     main()
