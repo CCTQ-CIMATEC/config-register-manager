@@ -252,7 +252,7 @@ def read_csv_data(csv_file):
         
         # Handle case-insensitive headers
         fieldnames = [name.lower().strip() for name in reader.fieldnames]
-        
+
         for row in reader:
             # Convert keys to lowercase for consistency
             row_data = {k.lower().strip(): v.strip() for k, v in row.items()}
@@ -373,8 +373,6 @@ def main():
     parser.add_argument('-s', '--bus-size', default='32', help='size of bus (default: 32)')
 
     args = parser.parse_args()
-    
-
 
     # Convert all CSV files to a single IP-XACT file
     convert_all_csv_to_ipxact(args.base_address, args.bus_size)

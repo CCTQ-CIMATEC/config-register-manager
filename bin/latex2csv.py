@@ -85,10 +85,12 @@ def clean_table_content(table_content):
         
         for cell in cells:
             cell = cell.strip()
+            print(f"before {cell}")
             # Remove remaining LaTeX commands
             cell = re.sub(r'\\[a-zA-Z]+(?:\{[^}]*\})*', '', cell)
+            cell = re.sub(r'\\_', ' ', cell)
             cell = re.sub(r'\s+', ' ', cell)
-            print(cell)
+            print(f"after {cell}")
             cleaned_cells.append(cell.strip())
             
         

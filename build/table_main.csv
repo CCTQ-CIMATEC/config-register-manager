@@ -1,3 +1,3 @@
 IP,Description,Base Address,REF
-IP\_A,IP\_A description,0x4000\_0000,
-IP\_B,IP\_B description,0x4000\_1000,
+IP A,IP A description,0x4000 0000,
+IP B,IP B description,0x4000 1000,

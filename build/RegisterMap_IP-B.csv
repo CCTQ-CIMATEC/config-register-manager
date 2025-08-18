@@ -1,4 +1,4 @@
-Register,Offset,Field,Bits,Access\_Policy,Volatile,reset,Description,Enum Values
+Register,Offset,Field,Bits,Access Policy,Volatile,reset,Description,Enum Values
 CTRL2,0x1000,MODE2,[1:0],RW,false,'h1,Operation mode,0:Idle; 1:Run; 2:Sleep
 CTRL2,0x1000,PRIORITY,[3:2],RW,false,'h0,Priority level,0:Low; 1:Med; 2:High
 CTRL2,0x1000,ENABLE2,[4],RW,false,'h0,Enable block,
