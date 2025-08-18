@@ -12,6 +12,16 @@ def get_absolute_path(relative_path):
     script_dir = Path(__file__).parent
     return (script_dir / relative_path).resolve()
 
+def parse_enumerated_values(field):
+    """Extrai valores enumerados de um campo."""
+    enum_values = {}
+    for enum in field.findall('ipxact:enumeratedValues/ipxact:enumeratedValue', NS):
+        name_elem = enum.find('ipxact:name', NS)
+        value_elem = enum.find('ipxact:value', NS)
+        if name_elem is not None and value_elem is not None:
+            enum_values[value_elem.text] = name_elem.text
+    return enum_values if enum_values else None
+
 def parse_ipxact(input_xml):
     """Extrai dados do IP-XACT para geração de CSR."""
     try:
@@ -23,38 +33,47 @@ def parse_ipxact(input_xml):
         component = root
         name = component.find('ipxact:name', NS).text
         
-        # Processa registros e campos
+        # Processa registros, campos e enums
         registers = {}
+        enum_definitions = {}  # Armazena definições de enum para reutilização
+        
         for addr_block in component.findall('.//ipxact:addressBlock', NS):
             for reg in addr_block.findall('ipxact:register', NS):
                 reg_name = reg.find('ipxact:name', NS).text
-                offset_elem = reg.find('ipxact:addressOffset', NS)
-                size_elem = reg.find('ipxact:size', NS)
-                
-                offset = offset_elem.text if offset_elem is not None else "'h0"
-                size = int(size_elem.text) if size_elem is not None else 32
+                offset = reg.find('ipxact:addressOffset', NS).text
+                size = int(reg.find('ipxact:size', NS).text) if reg.find('ipxact:size', NS) is not None else 32
                 
                 fields = {}
                 for field in reg.findall('ipxact:field', NS):
                     field_name = field.find('ipxact:name', NS).text
                     bit_offset = int(field.find('ipxact:bitOffset', NS).text)
                     bit_width = int(field.find('ipxact:bitWidth', NS).text)
+                    access = field.find('ipxact:access', NS).text if field.find('ipxact:access', NS) is not None else 'read-write'
+                    volatile = field.find('ipxact:volatile', NS) is not None and field.find('ipxact:volatile', NS).text.lower() == 'true'
                     
-                    # Acesso (read-write, read-only, write-only)
-                    access_elem = field.find('ipxact:access', NS)
-                    access = access_elem.text if access_elem is not None else 'read-write'
+                    # Valor de reset (procura em resets/reset/value primeiro)
+                    reset_value = "'h0"
+                    resets = field.find('ipxact:resets', NS)
+                    if resets is not None:
+                        reset = resets.find('ipxact:reset', NS)
+                        if reset is not None:
+                            reset_value_elem = reset.find('ipxact:value', NS)
+                            if reset_value_elem is not None:
+                                reset_value = reset_value_elem.text
+                    else:
+                        # Fallback para value direto
+                        reset_value_elem = field.find('.//ipxact:value', NS)
+                        if reset_value_elem is not None:
+                            reset_value = reset_value_elem.text
                     
-                    # Volatile
-                    volatile_elem = field.find('ipxact:volatile', NS)
-                    volatile = volatile_elem is not None and volatile_elem.text.lower() == 'true'
+                    description = field.find('ipxact:description', NS).text if field.find('ipxact:description', NS) is not None else ""
                     
-                    # Reset value
-                    reset_elem = field.find('.//ipxact:value', NS)
-                    reset_value = reset_elem.text if reset_elem is not None else "'h0"
-                    
-                    # Descrição
-                    desc_elem = field.find('ipxact:description', NS)
-                    description = desc_elem.text if desc_elem is not None else ""
+                    # Processa valores enumerados
+                    enum_values = parse_enumerated_values(field)
+                    if enum_values:
+                        # Cria um nome único para o enum baseado no registro e campo
+                        enum_name = f"{reg_name}_{field_name}_e"
+                        enum_definitions[enum_name] = enum_values
                     
                     fields[field_name] = {
                         'bit_offset': bit_offset,
@@ -62,7 +81,8 @@ def parse_ipxact(input_xml):
                         'access': access,
                         'volatile': volatile,
                         'reset_value': reset_value,
-                        'description': description
+                        'description': description,
+                        'enum': enum_name if enum_values else None
                     }
                 
                 registers[reg_name] = {
@@ -73,16 +93,13 @@ def parse_ipxact(input_xml):
         
         return {
             'name': name,
-            'registers': registers
+            'registers': registers,
+            'enums': enum_definitions
         }
     
-    except ET.ParseError as e:
-        print(f"Erro no XML: {str(e)}", file=sys.stderr)
-    except FileNotFoundError:
-        print(f"Arquivo não encontrado: {input_xml}", file=sys.stderr)
     except Exception as e:
         print(f"Erro inesperado: {type(e).__name__}: {str(e)}", file=sys.stderr)
-    return None
+        return None
 
 def needs_hw_input(field_info):
     """Verifica se o campo precisa de entrada de hardware"""
@@ -93,8 +110,14 @@ def needs_hw_input(field_info):
 def format_reset_value(reset_value, bit_width):
     """Formata o valor de reset com a largura correta"""
     if reset_value.startswith("'h"):
-        return f"{bit_width}{reset_value}"
-    return reset_value
+        return f"{bit_width}'h{reset_value[2:]}"
+    elif reset_value.startswith("0x"):
+        return f"{bit_width}'h{reset_value[2:]}"
+    elif reset_value.startswith("'b"):
+        return f"{bit_width}'b{reset_value[2:]}"
+    elif reset_value.startswith("'d"):
+        return f"{bit_width}'d{reset_value[2:]}"
+    return f"{bit_width}'h0"
 
 def generate_package(ipxact_data, output_dir):
     """Gera o arquivo package SystemVerilog."""
@@ -105,12 +128,28 @@ def generate_package(ipxact_data, output_dir):
         
         component_name = ipxact_data['name']
         registers = ipxact_data['registers']
+        enums = ipxact_data.get('enums', {})
         
         with open(output_file, 'w', encoding='utf-8') as f:
             # Cabeçalho
             f.write(f"// Package {component_name}_pkg - Gerado automaticamente em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("// Estruturas typedef para interface CSR\n\n")
             f.write(f"package {component_name}_pkg;\n\n")
+            
+            # Gera definições de enum primeiro
+            if enums:
+                f.write("    // Enum definitions\n")
+                for enum_name, enum_values in enums.items():
+                    # Calcula o número de bits necessário para representar o enum
+                    enum_size = max(len(bin(len(enum_values))) - 3, 1)
+                    f.write(f"    typedef enum logic [{enum_size}:0] {{\n")
+                    for value, name in enum_values.items():
+                        # Remove caracteres inválidos para nomes SystemVerilog
+                        clean_name = name.replace('\\', '').replace(' ', '_')
+                        f.write(f"        {clean_name} = {value},\n")
+                    first_key = list(enum_values.keys())[0]
+                    f.write(f"        {enum_name.upper()}_DEFAULT = {first_key},\n")
+                    f.write(f"    }} {enum_name};\n\n")
             
             # Gera typedef structs para entrada (hardware -> registrador)
             f.write("    // Input structures (Hardware -> Register)\n")
@@ -121,7 +160,9 @@ def generate_package(ipxact_data, output_dir):
                     if needs_hw_input(field_info):
                         f.write(f"    typedef struct {{\n")
                         
-                        if field_info['bit_width'] > 1:
+                        if field_info['enum']:
+                            f.write(f"        {field_info['enum']} next;\n")
+                        elif field_info['bit_width'] > 1:
                             f.write(f"        logic [{field_info['bit_width']-1}:0] next;\n")
                         else:
                             f.write(f"        logic next;\n")
@@ -155,7 +196,9 @@ def generate_package(ipxact_data, output_dir):
                 for field_name, field_info in reg_info['fields'].items():
                     if field_info['access'] != 'write-only':
                         f.write(f"    typedef struct {{\n")
-                        if field_info['bit_width'] > 1:
+                        if field_info['enum']:
+                            f.write(f"        {field_info['enum']} value;\n")
+                        elif field_info['bit_width'] > 1:
                             f.write(f"        logic [{field_info['bit_width']-1}:0] value;\n")
                         else:
                             f.write(f"        logic value;\n")
@@ -194,6 +237,7 @@ def generate_logic(ipxact_data, output_dir):
         
         component_name = ipxact_data['name']
         registers = ipxact_data['registers']
+        enums = ipxact_data.get('enums', {})
         
         with open(output_file, 'w', encoding='utf-8') as f:
             # Cabeçalho
@@ -212,7 +256,9 @@ def generate_logic(ipxact_data, output_dir):
                 for field_name, field_info in reg_info['fields'].items():
                     if field_info['access'] != 'read-only' or field_info['volatile']:
                         f.write(f"            struct {{\n")
-                        if field_info['bit_width'] > 1:
+                        if field_info['enum']:
+                            f.write(f"                {field_info['enum']} next;\n")
+                        elif field_info['bit_width'] > 1:
                             f.write(f"                logic [{field_info['bit_width']-1}:0] next;\n")
                         else:
                             f.write(f"                logic next;\n")
@@ -229,7 +275,9 @@ def generate_logic(ipxact_data, output_dir):
                 for field_name, field_info in reg_info['fields'].items():
                     if field_info['access'] != 'read-only' or field_info['volatile']:
                         f.write(f"            struct {{\n")
-                        if field_info['bit_width'] > 1:
+                        if field_info['enum']:
+                            f.write(f"                {field_info['enum']} value;\n")
+                        elif field_info['bit_width'] > 1:
                             f.write(f"                logic [{field_info['bit_width']-1}:0] value;\n")
                         else:
                             f.write(f"                logic value;\n")
@@ -247,19 +295,27 @@ def generate_logic(ipxact_data, output_dir):
                     f.write(f"    // Field: {component_name}.{reg_name}.{field_name}\n")
                     
                     # Lógica combinacional
-                    bit_range = f"[{field_info['bit_width']-1}:0]" if field_info['bit_width'] > 1 else "[0:0]"
-                    bit_select = f"[{field_info['bit_offset']+field_info['bit_width']-1}:{field_info['bit_offset']}]"
+                    bit_range = f"[{field_info['bit_width']-1}:0]" if field_info['bit_width'] > 1 and not field_info['enum'] else ""
+                    bit_select = f"[{field_info['bit_offset']+field_info['bit_width']-1}:{field_info['bit_offset']}]" if field_info['bit_width'] > 1 else f"[{field_info['bit_offset']}]"
                     
                     f.write("    always_comb begin\n")
-                    f.write(f"        automatic logic {bit_range} next_c;\n")
-                    f.write(f"        automatic logic load_next_c;\n")
+                    if field_info['enum']:
+                        f.write(f"        {field_info['enum']} next_c;\n")
+                    else:
+                        f.write(f"        logic {bit_range} next_c;\n")
+                    f.write(f"        logic load_next_c;\n")
                     f.write(f"        next_c = field_storage.{reg_name}.{field_name}.value;\n")
                     f.write(f"        load_next_c = '0;\n")
                     
                     # Software write
                     if field_info['access'] in ['read-write', 'write-only']:
                         f.write(f"        if(decoded_reg_strb.{reg_name} && decoded_req_is_wr) begin // SW write\n")
-                        f.write(f"            next_c = (field_storage.{reg_name}.{field_name}.value & ~decoded_wr_biten{bit_select}) | (decoded_wr_data{bit_select} & decoded_wr_biten{bit_select});\n")
+                        if field_info['enum']:
+                            f.write(f"            next_c = {field_info['enum']}'(decoded_wr_data{bit_select});\n")
+                        elif field_info['bit_width'] > 1:
+                            f.write(f"            next_c = (field_storage.{reg_name}.{field_name}.value & ~decoded_wr_biten{bit_select}) | (decoded_wr_data{bit_select} & decoded_wr_biten{bit_select});\n")
+                        else:
+                            f.write(f"            next_c = decoded_wr_data{bit_select};\n")
                         f.write(f"            load_next_c = '1;\n")
                         f.write("        end")
                         
@@ -284,7 +340,10 @@ def generate_logic(ipxact_data, output_dir):
                     f.write("    always_ff @(posedge clk) begin\n")
                     if field_info['access'] != 'write-only':
                         f.write("        if(rst) begin\n")
-                        f.write(f"            field_storage.{reg_name}.{field_name}.value <= {format_reset_value(field_info['reset_value'], field_info['bit_width'])};\n")
+                        if field_info['enum']:
+                            f.write(f"            field_storage.{reg_name}.{field_name}.value <= {field_info['enum']}'({format_reset_value(field_info['reset_value'], field_info['bit_width'])});\n")
+                        else:
+                            f.write(f"            field_storage.{reg_name}.{field_name}.value <= {format_reset_value(field_info['reset_value'], field_info['bit_width'])};\n")
                         f.write("        end else begin\n")
                         f.write(f"            if(field_combo.{reg_name}.{field_name}.load_next) begin\n")
                         f.write(f"                field_storage.{reg_name}.{field_name}.value <= field_combo.{reg_name}.{field_name}.next;\n")
@@ -325,8 +384,8 @@ if __name__ == "__main__":
         logic_success = generate_logic(ip_data, OUTPUT_DIR)
         
         if pkg_success and logic_success:
-            print(f"Conversão concluída! Verifique {OUTPUT_DIR}")
+            print(f"✅ Conversão concluída! Verifique {OUTPUT_DIR}")
             sys.exit(0)
     
-    print("Falha na conversão")
+    print("❌ Falha na conversão")
     sys.exit(1)
