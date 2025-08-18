@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 // Lógica CSR_IP_Map - Gerado automaticamente em 2025-08-18 10:57:19
-=======
-// Lógica CSR_IP_Map - Gerado automaticamente em 2025-08-18 10:06:23
->>>>>>> f20423d (Enum classify added.)
 // Lógica dos registradores CSR
 
     //--------------------------------------------------------------------------
@@ -11,71 +7,11 @@
     typedef struct {
         struct {
             struct {
-<<<<<<< HEAD
                 logic [1:0] next;
                 logic load_next;
             } mode2;
             struct {
                 logic [1:0] next;
-=======
-                ctrl_prescaler_e next;
-                logic load_next;
-            } prescaler;
-            struct {
-                ctrl_mode_e next;
-                logic load_next;
-            } mode;
-            struct {
-                logic next;
-                logic load_next;
-            } master;
-            struct {
-                logic next;
-                logic load_next;
-            } dord;
-            struct {
-                logic next;
-                logic load_next;
-            } enable;
-            struct {
-                logic next;
-                logic load_next;
-            } clk2x;
-        } ctrl;
-        struct {
-            struct {
-                intctrl_intlvl_e next;
-                logic load_next;
-            } intlvl;
-        } intctrl;
-        struct {
-            struct {
-                logic next;
-                logic load_next;
-            } wrcol;
-            struct {
-                logic next;
-                logic load_next;
-            } if;
-        } status;
-        struct {
-            struct {
-                logic [8:0] next;
-                logic load_next;
-            } wdata;
-            struct {
-                logic [8:0] next;
-                logic load_next;
-            } rdata;
-        } data;
-        struct {
-            struct {
-                ctrl2_mode2_e next;
-                logic load_next;
-            } mode2;
-            struct {
-                ctrl2_priority_e next;
->>>>>>> f20423d (Enum classify added.)
                 logic load_next;
             } priority;
             struct {
@@ -113,7 +49,6 @@
                 logic load_next;
             } out;
         } data2;
-<<<<<<< HEAD
         struct {
             struct {
                 logic [1:0] next;
@@ -166,66 +101,16 @@
                 logic load_next;
             } rdata;
         } data;
-=======
->>>>>>> f20423d (Enum classify added.)
     } field_combo_t;
     field_combo_t field_combo;
 
     typedef struct {
         struct {
             struct {
-<<<<<<< HEAD
                 logic [1:0] value;
             } mode2;
             struct {
                 logic [1:0] value;
-=======
-                ctrl_prescaler_e value;
-            } prescaler;
-            struct {
-                ctrl_mode_e value;
-            } mode;
-            struct {
-                logic value;
-            } master;
-            struct {
-                logic value;
-            } dord;
-            struct {
-                logic value;
-            } enable;
-            struct {
-                logic value;
-            } clk2x;
-        } ctrl;
-        struct {
-            struct {
-                intctrl_intlvl_e value;
-            } intlvl;
-        } intctrl;
-        struct {
-            struct {
-                logic value;
-            } wrcol;
-            struct {
-                logic value;
-            } if;
-        } status;
-        struct {
-            struct {
-                logic [8:0] value;
-            } wdata;
-            struct {
-                logic [8:0] value;
-            } rdata;
-        } data;
-        struct {
-            struct {
-                ctrl2_mode2_e value;
-            } mode2;
-            struct {
-                ctrl2_priority_e value;
->>>>>>> f20423d (Enum classify added.)
             } priority;
             struct {
                 logic value;
@@ -255,7 +140,6 @@
                 logic [15:0] value;
             } out;
         } data2;
-<<<<<<< HEAD
         struct {
             struct {
                 logic [1:0] value;
@@ -525,19 +409,6 @@
         load_next_c = '0;
         if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.ctrl.prescaler.value & ~decoded_wr_biten[1:0]) | (decoded_wr_data[1:0] & decoded_wr_biten[1:0]);
-=======
-    } field_storage_t;
-    field_storage_t field_storage;
-
-    // Field: CSR_IP_Map.ctrl.prescaler
-    always_comb begin
-        ctrl_prescaler_e next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl.prescaler.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
-            next_c = ctrl_prescaler_e'(decoded_wr_data[1:0]);
->>>>>>> f20423d (Enum classify added.)
             load_next_c = '1;
         end
         field_combo.ctrl.prescaler.next = next_c;
@@ -545,11 +416,7 @@
     end
     always_ff @(posedge clk) begin
         if(rst) begin
-<<<<<<< HEAD
             field_storage.ctrl.prescaler.value <= 0;
-=======
-            field_storage.ctrl.prescaler.value <= ctrl_prescaler_e'(2'h0);
->>>>>>> f20423d (Enum classify added.)
         end else begin
             if(field_combo.ctrl.prescaler.load_next) begin
                 field_storage.ctrl.prescaler.value <= field_combo.ctrl.prescaler.next;
@@ -560,21 +427,12 @@
 
     // Field: CSR_IP_Map.ctrl.mode
     always_comb begin
-<<<<<<< HEAD
         automatic logic [1:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.ctrl.mode.value;
         load_next_c = '0;
         if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.ctrl.mode.value & ~decoded_wr_biten[3:2]) | (decoded_wr_data[3:2] & decoded_wr_biten[3:2]);
-=======
-        ctrl_mode_e next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl.mode.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
-            next_c = ctrl_mode_e'(decoded_wr_data[3:2]);
->>>>>>> f20423d (Enum classify added.)
             load_next_c = '1;
         end
         field_combo.ctrl.mode.next = next_c;
@@ -582,11 +440,7 @@
     end
     always_ff @(posedge clk) begin
         if(rst) begin
-<<<<<<< HEAD
             field_storage.ctrl.mode.value <= 0;
-=======
-            field_storage.ctrl.mode.value <= ctrl_mode_e'(2'h0);
->>>>>>> f20423d (Enum classify added.)
         end else begin
             if(field_combo.ctrl.mode.load_next) begin
                 field_storage.ctrl.mode.value <= field_combo.ctrl.mode.next;
@@ -597,21 +451,12 @@
 
     // Field: CSR_IP_Map.ctrl.master
     always_comb begin
-<<<<<<< HEAD
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.ctrl.master.value;
         load_next_c = '0;
         if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.ctrl.master.value & ~decoded_wr_biten[4:4]) | (decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
-=======
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl.master.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[4];
->>>>>>> f20423d (Enum classify added.)
             load_next_c = '1;
         end else if(hwif_in.ctrl.master.we) begin // HW Write - we
             next_c = hwif_in.ctrl.master.next;
@@ -633,21 +478,12 @@
 
     // Field: CSR_IP_Map.ctrl.dord
     always_comb begin
-<<<<<<< HEAD
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.ctrl.dord.value;
         load_next_c = '0;
         if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.ctrl.dord.value & ~decoded_wr_biten[5:5]) | (decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
-=======
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl.dord.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[5];
->>>>>>> f20423d (Enum classify added.)
             load_next_c = '1;
         end
         field_combo.ctrl.dord.next = next_c;
@@ -666,21 +502,12 @@
 
     // Field: CSR_IP_Map.ctrl.enable
     always_comb begin
-<<<<<<< HEAD
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.ctrl.enable.value;
         load_next_c = '0;
         if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.ctrl.enable.value & ~decoded_wr_biten[6:6]) | (decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
-=======
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl.enable.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[6];
->>>>>>> f20423d (Enum classify added.)
             load_next_c = '1;
         end
         field_combo.ctrl.enable.next = next_c;
@@ -699,21 +526,12 @@
 
     // Field: CSR_IP_Map.ctrl.clk2x
     always_comb begin
-<<<<<<< HEAD
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.ctrl.clk2x.value;
         load_next_c = '0;
         if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.ctrl.clk2x.value & ~decoded_wr_biten[7:7]) | (decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
-=======
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl.clk2x.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[7];
->>>>>>> f20423d (Enum classify added.)
             load_next_c = '1;
         end
         field_combo.ctrl.clk2x.next = next_c;
@@ -732,21 +550,12 @@
 
     // Field: CSR_IP_Map.intctrl.intlvl
     always_comb begin
-<<<<<<< HEAD
         automatic logic [1:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.intctrl.intlvl.value;
         load_next_c = '0;
         if(decoded_reg_strb.intctrl && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.intctrl.intlvl.value & ~decoded_wr_biten[1:0]) | (decoded_wr_data[1:0] & decoded_wr_biten[1:0]);
-=======
-        intctrl_intlvl_e next_c;
-        logic load_next_c;
-        next_c = field_storage.intctrl.intlvl.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.intctrl && decoded_req_is_wr) begin // SW write
-            next_c = intctrl_intlvl_e'(decoded_wr_data[1:0]);
->>>>>>> f20423d (Enum classify added.)
             load_next_c = '1;
         end
         field_combo.intctrl.intlvl.next = next_c;
@@ -754,11 +563,7 @@
     end
     always_ff @(posedge clk) begin
         if(rst) begin
-<<<<<<< HEAD
             field_storage.intctrl.intlvl.value <= 0;
-=======
-            field_storage.intctrl.intlvl.value <= intctrl_intlvl_e'(2'h0);
->>>>>>> f20423d (Enum classify added.)
         end else begin
             if(field_combo.intctrl.intlvl.load_next) begin
                 field_storage.intctrl.intlvl.value <= field_combo.intctrl.intlvl.next;
@@ -769,22 +574,11 @@
 
     // Field: CSR_IP_Map.status.wrcol
     always_comb begin
-<<<<<<< HEAD
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.status.wrcol.value;
         load_next_c = '0;
         if(hwif_in.status.wrcol.we) begin // HW Write - we
-=======
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.status.wrcol.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.status && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[6];
-            load_next_c = '1;
-        end else if(hwif_in.status.wrcol.we) begin // HW Write - we
->>>>>>> f20423d (Enum classify added.)
             next_c = hwif_in.status.wrcol.next;
             load_next_c = '1;
         end
@@ -802,7 +596,6 @@
     end
     assign hwif_out.status.wrcol.value = field_storage.status.wrcol.value;
 
-<<<<<<< HEAD
     // Field: CSR_IP_Map.status.if_field
     always_comb begin
         automatic logic [0:0] next_c;
@@ -831,39 +624,6 @@
     always_comb begin
         automatic logic [8:0] next_c;
         automatic logic load_next_c;
-=======
-    // Field: CSR_IP_Map.status.if
-    always_comb begin
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.status.if.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.status && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[7];
-            load_next_c = '1;
-        end else if(hwif_in.status.if.we) begin // HW Write - we
-            next_c = hwif_in.status.if.next;
-            load_next_c = '1;
-        end
-        field_combo.status.if.next = next_c;
-        field_combo.status.if.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.status.if.value <= 1'h0;
-        end else begin
-            if(field_combo.status.if.load_next) begin
-                field_storage.status.if.value <= field_combo.status.if.next;
-            end
-        end
-    end
-    assign hwif_out.status.if.value = field_storage.status.if.value;
-
-    // Field: CSR_IP_Map.data.wdata
-    always_comb begin
-        logic [8:0] next_c;
-        logic load_next_c;
->>>>>>> f20423d (Enum classify added.)
         next_c = field_storage.data.wdata.value;
         load_next_c = '0;
         if(decoded_reg_strb.data && decoded_req_is_wr) begin // SW write
@@ -874,7 +634,6 @@
         field_combo.data.wdata.load_next = load_next_c;
     end
     always_ff @(posedge clk) begin
-<<<<<<< HEAD
         if(field_combo.data.wdata.load_next) begin
             field_storage.data.wdata.value <= field_combo.data.wdata.next;
         end
@@ -884,22 +643,6 @@
     always_comb begin
         automatic logic [8:0] next_c;
         automatic logic load_next_c;
-=======
-        if(rst) begin
-            field_storage.data.wdata.value <= 9'h0;
-        end else begin
-            if(field_combo.data.wdata.load_next) begin
-                field_storage.data.wdata.value <= field_combo.data.wdata.next;
-            end
-        end
-    end
-    assign hwif_out.data.wdata.value = field_storage.data.wdata.value;
-
-    // Field: CSR_IP_Map.data.rdata
-    always_comb begin
-        logic [8:0] next_c;
-        logic load_next_c;
->>>>>>> f20423d (Enum classify added.)
         next_c = field_storage.data.rdata.value;
         load_next_c = '0;
         if(decoded_reg_strb.data && decoded_req_is_wr) begin // SW write
@@ -923,234 +666,3 @@
     end
     assign hwif_out.data.rdata.value = field_storage.data.rdata.value;
 
-<<<<<<< HEAD
-=======
-    // Field: CSR_IP_Map.ctrl2.mode2
-    always_comb begin
-        ctrl2_mode2_e next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl2.mode2.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl2 && decoded_req_is_wr) begin // SW write
-            next_c = ctrl2_mode2_e'(decoded_wr_data[1:0]);
-            load_next_c = '1;
-        end
-        field_combo.ctrl2.mode2.next = next_c;
-        field_combo.ctrl2.mode2.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.ctrl2.mode2.value <= ctrl2_mode2_e'(2'h1);
-        end else begin
-            if(field_combo.ctrl2.mode2.load_next) begin
-                field_storage.ctrl2.mode2.value <= field_combo.ctrl2.mode2.next;
-            end
-        end
-    end
-    assign hwif_out.ctrl2.mode2.value = field_storage.ctrl2.mode2.value;
-
-    // Field: CSR_IP_Map.ctrl2.priority
-    always_comb begin
-        ctrl2_priority_e next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl2.priority.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl2 && decoded_req_is_wr) begin // SW write
-            next_c = ctrl2_priority_e'(decoded_wr_data[3:2]);
-            load_next_c = '1;
-        end
-        field_combo.ctrl2.priority.next = next_c;
-        field_combo.ctrl2.priority.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.ctrl2.priority.value <= ctrl2_priority_e'(2'h0);
-        end else begin
-            if(field_combo.ctrl2.priority.load_next) begin
-                field_storage.ctrl2.priority.value <= field_combo.ctrl2.priority.next;
-            end
-        end
-    end
-    assign hwif_out.ctrl2.priority.value = field_storage.ctrl2.priority.value;
-
-    // Field: CSR_IP_Map.ctrl2.enable2
-    always_comb begin
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl2.enable2.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl2 && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[4];
-            load_next_c = '1;
-        end
-        field_combo.ctrl2.enable2.next = next_c;
-        field_combo.ctrl2.enable2.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.ctrl2.enable2.value <= 1'h0;
-        end else begin
-            if(field_combo.ctrl2.enable2.load_next) begin
-                field_storage.ctrl2.enable2.value <= field_combo.ctrl2.enable2.next;
-            end
-        end
-    end
-    assign hwif_out.ctrl2.enable2.value = field_storage.ctrl2.enable2.value;
-
-    // Field: CSR_IP_Map.ctrl2.resetn
-    always_comb begin
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.ctrl2.resetn.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.ctrl2 && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[5];
-            load_next_c = '1;
-        end else if(hwif_in.ctrl2.resetn.we) begin // HW Write - we
-            next_c = hwif_in.ctrl2.resetn.next;
-            load_next_c = '1;
-        end
-        field_combo.ctrl2.resetn.next = next_c;
-        field_combo.ctrl2.resetn.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.ctrl2.resetn.value <= 1'h1;
-        end else begin
-            if(field_combo.ctrl2.resetn.load_next) begin
-                field_storage.ctrl2.resetn.value <= field_combo.ctrl2.resetn.next;
-            end
-        end
-    end
-    assign hwif_out.ctrl2.resetn.value = field_storage.ctrl2.resetn.value;
-
-    // Field: CSR_IP_Map.cfg.clockdiv
-    always_comb begin
-        logic [7:0] next_c;
-        logic load_next_c;
-        next_c = field_storage.cfg.clockdiv.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.cfg && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.cfg.clockdiv.value & ~decoded_wr_biten[7:0]) | (decoded_wr_data[7:0] & decoded_wr_biten[7:0]);
-            load_next_c = '1;
-        end
-        field_combo.cfg.clockdiv.next = next_c;
-        field_combo.cfg.clockdiv.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.cfg.clockdiv.value <= 8'h2;
-        end else begin
-            if(field_combo.cfg.clockdiv.load_next) begin
-                field_storage.cfg.clockdiv.value <= field_combo.cfg.clockdiv.next;
-            end
-        end
-    end
-    assign hwif_out.cfg.clockdiv.value = field_storage.cfg.clockdiv.value;
-
-    // Field: CSR_IP_Map.stat2.err
-    always_comb begin
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.stat2.err.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.stat2 && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[0];
-            load_next_c = '1;
-        end else if(hwif_in.stat2.err.we) begin // HW Write - we
-            next_c = hwif_in.stat2.err.next;
-            load_next_c = '1;
-        end
-        field_combo.stat2.err.next = next_c;
-        field_combo.stat2.err.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.stat2.err.value <= 1'h0;
-        end else begin
-            if(field_combo.stat2.err.load_next) begin
-                field_storage.stat2.err.value <= field_combo.stat2.err.next;
-            end
-        end
-    end
-    assign hwif_out.stat2.err.value = field_storage.stat2.err.value;
-
-    // Field: CSR_IP_Map.stat2.ready
-    always_comb begin
-        logic  next_c;
-        logic load_next_c;
-        next_c = field_storage.stat2.ready.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.stat2 && decoded_req_is_wr) begin // SW write
-            next_c = decoded_wr_data[1];
-            load_next_c = '1;
-        end else if(hwif_in.stat2.ready.we) begin // HW Write - we
-            next_c = hwif_in.stat2.ready.next;
-            load_next_c = '1;
-        end
-        field_combo.stat2.ready.next = next_c;
-        field_combo.stat2.ready.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.stat2.ready.value <= 1'h1;
-        end else begin
-            if(field_combo.stat2.ready.load_next) begin
-                field_storage.stat2.ready.value <= field_combo.stat2.ready.next;
-            end
-        end
-    end
-    assign hwif_out.stat2.ready.value = field_storage.stat2.ready.value;
-
-    // Field: CSR_IP_Map.data2.in
-    always_comb begin
-        logic [15:0] next_c;
-        logic load_next_c;
-        next_c = field_storage.data2.in.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.data2 && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.data2.in.value & ~decoded_wr_biten[15:0]) | (decoded_wr_data[15:0] & decoded_wr_biten[15:0]);
-            load_next_c = '1;
-        end
-        field_combo.data2.in.next = next_c;
-        field_combo.data2.in.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.data2.in.value <= 16'h0;
-        end else begin
-            if(field_combo.data2.in.load_next) begin
-                field_storage.data2.in.value <= field_combo.data2.in.next;
-            end
-        end
-    end
-    assign hwif_out.data2.in.value = field_storage.data2.in.value;
-
-    // Field: CSR_IP_Map.data2.out
-    always_comb begin
-        logic [15:0] next_c;
-        logic load_next_c;
-        next_c = field_storage.data2.out.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.data2 && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.data2.out.value & ~decoded_wr_biten[31:16]) | (decoded_wr_data[31:16] & decoded_wr_biten[31:16]);
-            load_next_c = '1;
-        end else if(hwif_in.data2.out.we) begin // HW Write - we
-            next_c = hwif_in.data2.out.next;
-            load_next_c = '1;
-        end
-        field_combo.data2.out.next = next_c;
-        field_combo.data2.out.load_next = load_next_c;
-    end
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            field_storage.data2.out.value <= 16'h0;
-        end else begin
-            if(field_combo.data2.out.load_next) begin
-                field_storage.data2.out.value <= field_combo.data2.out.next;
-            end
-        end
-    end
-    assign hwif_out.data2.out.value = field_storage.data2.out.value;
-
->>>>>>> f20423d (Enum classify added.)
