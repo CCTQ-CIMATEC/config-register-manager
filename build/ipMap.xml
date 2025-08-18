@@ -8,139 +8,6 @@
     <ipxact:memoryMap>
       <ipxact:name>CSR_MemoryMap</ipxact:name>
       <ipxact:addressBlock>
-        <ipxact:name>IP-A</ipxact:name>
-        <ipxact:baseAddress>0x40000000</ipxact:baseAddress>
-        <ipxact:range>0x1000</ipxact:range>
-        <ipxact:width>32</ipxact:width>
-        <ipxact:register>
-          <ipxact:name>ctrl</ipxact:name>
-          <ipxact:addressOffset>0x0000</ipxact:addressOffset>
-          <ipxact:size>32</ipxact:size>
-          <ipxact:field>
-            <ipxact:name>prescaler</ipxact:name>
-            <ipxact:bitOffset>0</ipxact:bitOffset>
-            <ipxact:bitWidth>2</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:description>Controls</ipxact:description>
-            <ipxact:enumeratedValues>
-              <ipxact:enumeratedValue>
-                <ipxact:name>100Hz</ipxact:name>
-                <ipxact:value>0</ipxact:value>
-              </ipxact:enumeratedValue>
-              <ipxact:enumeratedValue>
-                <ipxact:name>500Hz</ipxact:name>
-                <ipxact:value>1</ipxact:value>
-              </ipxact:enumeratedValue>
-            </ipxact:enumeratedValues>
-          </ipxact:field>
-          <ipxact:field>
-            <ipxact:name>mode</ipxact:name>
-            <ipxact:bitOffset>2</ipxact:bitOffset>
-            <ipxact:bitWidth>2</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:description>Select</ipxact:description>
-            <ipxact:enumeratedValues>
-              <ipxact:enumeratedValue>
-                <ipxact:name>Mode\_A</ipxact:name>
-                <ipxact:value>0</ipxact:value>
-              </ipxact:enumeratedValue>
-              <ipxact:enumeratedValue>
-                <ipxact:name>Mode\_B</ipxact:name>
-                <ipxact:value>1</ipxact:value>
-              </ipxact:enumeratedValue>
-            </ipxact:enumeratedValues>
-          </ipxact:field>
-          <ipxact:field>
-            <ipxact:name>master</ipxact:name>
-            <ipxact:bitOffset>4</ipxact:bitOffset>
-            <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:description>Selects</ipxact:description>
-            <ipxact:volatile>true</ipxact:volatile>
-          </ipxact:field>
-          <ipxact:field>
-            <ipxact:name>dord</ipxact:name>
-            <ipxact:bitOffset>5</ipxact:bitOffset>
-            <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:description>Dord d</ipxact:description>
-          </ipxact:field>
-          <ipxact:field>
-            <ipxact:name>enable</ipxact:name>
-            <ipxact:bitOffset>6</ipxact:bitOffset>
-            <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:description>Setting</ipxact:description>
-          </ipxact:field>
-          <ipxact:field>
-            <ipxact:name>clk2x</ipxact:name>
-            <ipxact:bitOffset>7</ipxact:bitOffset>
-            <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:description>When th</ipxact:description>
-          </ipxact:field>
-        </ipxact:register>
-        <ipxact:register>
-          <ipxact:name>intctrl</ipxact:name>
-          <ipxact:addressOffset>0x0004</ipxact:addressOffset>
-          <ipxact:size>32</ipxact:size>
-          <ipxact:field>
-            <ipxact:name>intlvl</ipxact:name>
-            <ipxact:bitOffset>0</ipxact:bitOffset>
-            <ipxact:bitWidth>2</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:description>These b</ipxact:description>
-            <ipxact:enumeratedValues>
-              <ipxact:enumeratedValue>
-                <ipxact:name>Inter</ipxact:name>
-                <ipxact:value>0</ipxact:value>
-              </ipxact:enumeratedValue>
-              <ipxact:enumeratedValue>
-                <ipxact:name>NoInter</ipxact:name>
-                <ipxact:value>1</ipxact:value>
-              </ipxact:enumeratedValue>
-            </ipxact:enumeratedValues>
-          </ipxact:field>
-        </ipxact:register>
-        <ipxact:register>
-          <ipxact:name>status</ipxact:name>
-          <ipxact:addressOffset>0x0008</ipxact:addressOffset>
-          <ipxact:size>32</ipxact:size>
-          <ipxact:field>
-            <ipxact:name>wrcol</ipxact:name>
-            <ipxact:bitOffset>6</ipxact:bitOffset>
-            <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:volatile>true</ipxact:volatile>
-          </ipxact:field>
-          <ipxact:field>
-            <ipxact:name>if</ipxact:name>
-            <ipxact:bitOffset>7</ipxact:bitOffset>
-            <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:volatile>true</ipxact:volatile>
-          </ipxact:field>
-        </ipxact:register>
-        <ipxact:register>
-          <ipxact:name>data</ipxact:name>
-          <ipxact:addressOffset>0x0012</ipxact:addressOffset>
-          <ipxact:size>32</ipxact:size>
-          <ipxact:field>
-            <ipxact:name>wdata</ipxact:name>
-            <ipxact:bitOffset>0</ipxact:bitOffset>
-            <ipxact:bitWidth>9</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-          </ipxact:field>
-          <ipxact:field>
-            <ipxact:name>rdata</ipxact:name>
-            <ipxact:bitOffset>8</ipxact:bitOffset>
-            <ipxact:bitWidth>9</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
-            <ipxact:volatile>true</ipxact:volatile>
-          </ipxact:field>
-        </ipxact:register>
-      </ipxact:addressBlock>
-      <ipxact:addressBlock>
         <ipxact:name>IP-B</ipxact:name>
         <ipxact:baseAddress>0x40000000</ipxact:baseAddress>
         <ipxact:range>0x1014</ipxact:range>
@@ -245,7 +112,7 @@
             <ipxact:name>err</ipxact:name>
             <ipxact:bitOffset>0</ipxact:bitOffset>
             <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>read-only</ipxact:access>
             <ipxact:description>Error flag</ipxact:description>
             <ipxact:volatile>true</ipxact:volatile>
           </ipxact:field>
@@ -253,7 +120,7 @@
             <ipxact:name>ready</ipxact:name>
             <ipxact:bitOffset>1</ipxact:bitOffset>
             <ipxact:bitWidth>1</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>read-only</ipxact:access>
             <ipxact:resets>
               <ipxact:reset>
                 <ipxact:resetTypeRef>HARD</ipxact:resetTypeRef>
@@ -272,7 +139,7 @@
             <ipxact:name>in</ipxact:name>
             <ipxact:bitOffset>0</ipxact:bitOffset>
             <ipxact:bitWidth>16</ipxact:bitWidth>
-            <ipxact:access>read-write</ipxact:access>
+            <ipxact:access>write-only</ipxact:access>
             <ipxact:description>Input data</ipxact:description>
           </ipxact:field>
           <ipxact:field>
@@ -281,6 +148,139 @@
             <ipxact:bitWidth>16</ipxact:bitWidth>
             <ipxact:access>read-write</ipxact:access>
             <ipxact:description>Output data</ipxact:description>
+            <ipxact:volatile>true</ipxact:volatile>
+          </ipxact:field>
+        </ipxact:register>
+      </ipxact:addressBlock>
+      <ipxact:addressBlock>
+        <ipxact:name>IP-A</ipxact:name>
+        <ipxact:baseAddress>0x40000000</ipxact:baseAddress>
+        <ipxact:range>0x1000</ipxact:range>
+        <ipxact:width>32</ipxact:width>
+        <ipxact:register>
+          <ipxact:name>ctrl</ipxact:name>
+          <ipxact:addressOffset>0x0000</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>prescaler</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:bitWidth>2</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+            <ipxact:description>Controls</ipxact:description>
+            <ipxact:enumeratedValues>
+              <ipxact:enumeratedValue>
+                <ipxact:name>100Hz</ipxact:name>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:enumeratedValue>
+              <ipxact:enumeratedValue>
+                <ipxact:name>500Hz</ipxact:name>
+                <ipxact:value>1</ipxact:value>
+              </ipxact:enumeratedValue>
+            </ipxact:enumeratedValues>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>mode</ipxact:name>
+            <ipxact:bitOffset>2</ipxact:bitOffset>
+            <ipxact:bitWidth>2</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+            <ipxact:description>Select</ipxact:description>
+            <ipxact:enumeratedValues>
+              <ipxact:enumeratedValue>
+                <ipxact:name>Mode A</ipxact:name>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:enumeratedValue>
+              <ipxact:enumeratedValue>
+                <ipxact:name>Mode B</ipxact:name>
+                <ipxact:value>1</ipxact:value>
+              </ipxact:enumeratedValue>
+            </ipxact:enumeratedValues>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>master</ipxact:name>
+            <ipxact:bitOffset>4</ipxact:bitOffset>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+            <ipxact:description>Selects</ipxact:description>
+            <ipxact:volatile>true</ipxact:volatile>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>dord</ipxact:name>
+            <ipxact:bitOffset>5</ipxact:bitOffset>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+            <ipxact:description>Dord d</ipxact:description>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>enable</ipxact:name>
+            <ipxact:bitOffset>6</ipxact:bitOffset>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+            <ipxact:description>Setting</ipxact:description>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>clk2x</ipxact:name>
+            <ipxact:bitOffset>7</ipxact:bitOffset>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+            <ipxact:description>When th</ipxact:description>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>intctrl</ipxact:name>
+          <ipxact:addressOffset>0x0004</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>intlvl</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:bitWidth>2</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+            <ipxact:description>These b</ipxact:description>
+            <ipxact:enumeratedValues>
+              <ipxact:enumeratedValue>
+                <ipxact:name>Inter</ipxact:name>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:enumeratedValue>
+              <ipxact:enumeratedValue>
+                <ipxact:name>NoInter</ipxact:name>
+                <ipxact:value>1</ipxact:value>
+              </ipxact:enumeratedValue>
+            </ipxact:enumeratedValues>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>status</ipxact:name>
+          <ipxact:addressOffset>0x0008</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>wrcol</ipxact:name>
+            <ipxact:bitOffset>6</ipxact:bitOffset>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-only</ipxact:access>
+            <ipxact:volatile>true</ipxact:volatile>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>if</ipxact:name>
+            <ipxact:bitOffset>7</ipxact:bitOffset>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-only</ipxact:access>
+            <ipxact:volatile>true</ipxact:volatile>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>data</ipxact:name>
+          <ipxact:addressOffset>0x0012</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>wdata</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:bitWidth>9</ipxact:bitWidth>
+            <ipxact:access>write-only</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>rdata</ipxact:name>
+            <ipxact:bitOffset>8</ipxact:bitOffset>
+            <ipxact:bitWidth>9</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
             <ipxact:volatile>true</ipxact:volatile>
           </ipxact:field>
         </ipxact:register>
