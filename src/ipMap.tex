@@ -1,0 +1,77 @@
+\documentclass{article}
+\usepackage{tabularx} % Para tabelas com largura ajustável
+\usepackage{array}    % Para definir larguras de coluna
+\usepackage{ragged2e} % Para justificação de texto
+\usepackage{graphicx} % Required for inserting images
+\usepackage{multirow} 
+
+\title{IP Map Documentation}
+\author{gustavosantiago1018 }
+\date{August 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+
+\begin{table}[h]
+\centering
+\caption{System Address Map}
+\label{table:system_address_map}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{IP} & \textbf{Description} & \textbf{Base Address} & \textbf{REF} \\ \hline
+IP-A & IP\_A description & 0x4000\_0000  & \ref{table:IP-A} \\ \hline
+IP-B & IP\_B description & 0x4000\_1000  & \ref{table:IP-B} \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{tabela IP-A}
+\label{table:IP-A}
+\fontsize{7}{10}\selectfont % tamanho 8pt, espaçamento entre linhas 10pt
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{Register} & \textbf{Offset} & \textbf{Field} & \textbf{Bits} & \textbf{Access\_Policy} & \textbf{Volatile} & \textbf{reset} & \textbf{Description} & \textbf{Enum Values} \\ \hline
+\multirow{6}{*}{CTRL} & \multirow{6}{*}{0x0000} & PRESCALER & [1:0]  & RW  & false & 'h0  & Controls & 0:100Hz; 1:500Hz       \\ \cline{3-9}
+        &        & MODE      & [3:2]  & RW  & false & 'h0  & Select   & 0:Mode\_A; 1:Mode\_B   \\ \cline{3-9}
+        &        & MASTER    & [4]    & RW  & true  & 'h0  & Selects  &                        \\ \cline{3-9}
+        &        & DORD      & [5]    & RW  & false & 'h0  & Dord d   &                        \\ \cline{3-9}
+        &        & ENABLE    & [6]    & RW  & false & 'h0  & Setting  &                        \\ \cline{3-9}  
+        &        & CLK2X     & [7]    & RW  & false & 'h0  & When th  &                        \\ \hline  
+INTCTRL & 0x0004 & INTLVL    & [1:0]  & RW  & false & 'h0  & These b  & 0:Inter; 1:NoInter     \\ \hline
+\multirow{2}{*}{STATUS} & \multirow{2}{*}{0x0008} & WRCOL     & [6]    & RO  & true  & 'h0  &          &                        \\ \cline{3-9}
+        &        & IF_field        & [7]    & RO  & true  & 'h0  &          &                        \\ \hline
+\multirow{2}{*}{DATA} & \multirow{2}{*}{0x0012} & WDATA     & [8:0]  & WO  & false & 'h0  &          &                        \\ \cline{3-9}
+        &        & RDATA     & [16:8] & RW  & true  & 'h0  &          &                        \\ \hline
+\end{tabular}
+\end{table}
+
+% -----------------------------
+% New table for IP-B
+% -----------------------------
+\begin{table}[h]
+\centering
+\caption{tabela IP-B}
+\label{table:IP-B}
+\fontsize{7}{10}\selectfont
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{Register} & \textbf{Offset} & \textbf{Field} & \textbf{Bits} & \textbf{Access\_Policy} & \textbf{Volatile} & \textbf{reset} & \textbf{Description} & \textbf{Enum Values} \\ \hline
+\multirow{4}{*}{CTRL2} & \multirow{4}{*}{0x1000} & MODE2     & [1:0]  & RW  & false & 'h1  & Operation mode      & 0:Idle; 1:Run; 2:Sleep \\ \cline{3-9}
+        &        & PRIORITY  & [3:2]  & RW  & false & 'h0  & Priority level      & 0:Low; 1:Med; 2:High    \\ \cline{3-9}
+        &        & ENABLE2   & [4]    & RW  & false & 'h0  & Enable block        &                         \\ \cline{3-9}
+        &        & RESETN    & [5]    & RW  & true  & 'h1  & Active-low reset    &                         \\ \hline
+CFG     & 0x1004 & CLOCKDIV  & [7:0]  & RW  & false & 'h2  & Clock divider       &                         \\ \hline
+\multirow{2}{*}{STAT2} & \multirow{2}{*}{0x1008} & ERR       & [0]    & RO  & true  & 'h0  & Error flag          &                         \\ \cline{3-9}
+        &        & READY     & [1]    & RO  & true  & 'h1  & Ready status        &                         \\ \hline
+\multirow{2}{*}{DATA2} & \multirow{2}{*}{0x1010} & IN      & [15:0] & WO  & false & 'h0  & Input data          &                         \\ \cline{3-9}
+        &        & OUT       & [31:16]& RW  & true  & 'h0  & Output data         &                         \\ \hline
+\end{tabular}
+\end{table}
+
+\end{document}
+
