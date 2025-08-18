@@ -85,10 +85,14 @@ def clean_table_content(table_content):
         
         for cell in cells:
             cell = cell.strip()
+            print(f"before {cell}")
             # Remove remaining LaTeX commands
             cell = re.sub(r'\\[a-zA-Z]+(?:\{[^}]*\})*', '', cell)
+            cell = re.sub(r'\\_', ' ', cell)
             cell = re.sub(r'\s+', ' ', cell)
+            print(f"after {cell}")
             cleaned_cells.append(cell.strip())
+            
         
         if cleaned_cells and any(cell.strip() for cell in cleaned_cells):
             csv_rows.append(cleaned_cells)
@@ -150,6 +154,11 @@ def process_latex_tables(latex_content, output_dir="build"):
     
     print(f"Found main table: {main_table_label}")
     
+    main_csv = clean_table_content(table_content=main_table_content)
+
+    main_name = os.path.join(output_dir, f"table_main.csv")
+    save_table_to_csv(csv_rows=main_csv, output_file=main_name)
+
     #extract references from the main table
     references = extract_references_from_table(main_table_content)
     print(f"Found references: {references}")
@@ -163,9 +172,10 @@ def process_latex_tables(latex_content, output_dir="build"):
         table_csv = clean_table_content(table_content=table)
 
         #save on an table
-        file_name = os.path.join(output_dir, f"table_{idx}.csv")
+        ref_str = ref.replace("table:", "RegisterMap_", 1)
+        file_name = os.path.join(output_dir, f"{ref_str}.csv")
         save_table_to_csv(csv_rows=table_csv, output_file=file_name)
-        print(f"Table {ref} was created with name table_{idx}.csv\n")
+        print(f"Table {ref} was created with name {ref}.csv\n")
 
     print("End of operation")
     return True

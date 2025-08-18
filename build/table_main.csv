@@ -1,0 +1,3 @@
+IP,Description,Base Address,REF
+IP A,IP A description,0x4000 0000,
+IP B,IP B description,0x4000 1000,
