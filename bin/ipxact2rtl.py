@@ -29,14 +29,13 @@ def parse_ipxact(input_xml):
         tree = ET.parse(input_path)
         root = tree.getroot()
         
-        # Informações do componente
         component = root
         name = component.find('ipxact:name', NS).text
         
-        # Processa registros, campos e enums
         registers = {}
-        enum_definitions = {}  # Armazena definições de enum para reutilização
-        
+        enum_definitions = {}  # Nome do enum -> valores
+        enum_cache = {}        # Assinatura -> enum_name
+
         for addr_block in component.findall('.//ipxact:addressBlock', NS):
             for reg in addr_block.findall('ipxact:register', NS):
                 reg_name = reg.find('ipxact:name', NS).text
@@ -51,7 +50,7 @@ def parse_ipxact(input_xml):
                     access = field.find('ipxact:access', NS).text if field.find('ipxact:access', NS) is not None else 'read-write'
                     volatile = field.find('ipxact:volatile', NS) is not None and field.find('ipxact:volatile', NS).text.lower() == 'true'
                     
-                    # Valor de reset (procura em resets/reset/value primeiro)
+                    # Valor de reset
                     reset_value = "'h0"
                     resets = field.find('ipxact:resets', NS)
                     if resets is not None:
@@ -61,7 +60,6 @@ def parse_ipxact(input_xml):
                             if reset_value_elem is not None:
                                 reset_value = reset_value_elem.text
                     else:
-                        # Fallback para value direto
                         reset_value_elem = field.find('.//ipxact:value', NS)
                         if reset_value_elem is not None:
                             reset_value = reset_value_elem.text
@@ -70,10 +68,16 @@ def parse_ipxact(input_xml):
                     
                     # Processa valores enumerados
                     enum_values = parse_enumerated_values(field)
+                    enum_name = None
                     if enum_values:
-                        # Cria um nome único para o enum baseado no registro e campo
-                        enum_name = f"{reg_name}_{field_name}_e"
-                        enum_definitions[enum_name] = enum_values
+                        # Cria assinatura única do enum
+                        signature = tuple(sorted(enum_values.items()))
+                        if signature in enum_cache:
+                            enum_name = enum_cache[signature]  # reutiliza enum existente
+                        else:
+                            enum_name = f"{reg_name}_{field_name}_e"
+                            enum_definitions[enum_name] = enum_values
+                            enum_cache[signature] = enum_name
                     
                     fields[field_name] = {
                         'bit_offset': bit_offset,
@@ -82,7 +86,7 @@ def parse_ipxact(input_xml):
                         'volatile': volatile,
                         'reset_value': reset_value,
                         'description': description,
-                        'enum': enum_name if enum_values else None
+                        'enum': enum_name
                     }
                 
                 registers[reg_name] = {
