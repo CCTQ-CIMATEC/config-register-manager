@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Namespace IP-XACT
-NS = {'ipxact': 'http://www.accellera.org/XMLSchema/IPXACT/1685-2014'}
+NS = {'ipxact': 'http://www.accellera.org/XMLSchema/IPXACT/1685-2022'}
 
 def get_absolute_path(relative_path):
     """Converte caminhos relativos em absolutos baseado na localização do script."""
@@ -319,7 +319,7 @@ if __name__ == "__main__":
     
     print(f"⚡ Convertendo: {INPUT_XML}")
     ip_data = parse_ipxact(INPUT_XML)
-    
+
     if ip_data:
         pkg_success = generate_package(ip_data, OUTPUT_DIR)
         logic_success = generate_logic(ip_data, OUTPUT_DIR)
