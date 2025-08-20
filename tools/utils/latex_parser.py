@@ -2,64 +2,73 @@ import re
 import os
 from pathlib import Path
 
-def extract_table_with_label(latex_content, target_label):
+def extract_table_with_label(latex_content: str, target_label: str) -> str | None:
     """
-    Extract a specific table by its label
+    Extract the content of a LaTeX table by its label.
 
     Args:
-        latex_content: latex content inside the .text
-        target_label:  label that is gonna be used to search for
+        latex_content (str): Full LaTeX document content as a string.
+        target_label  (str): The label identifier of the target table 
+                            (e.g., 'tab:results').
 
     Returns:
-        table with match of ref
-    """
-    # Pattern to match table with specific label
-    pattern = r'\\begin{table}.*?\\label{' + re.escape(target_label) + r'}.*?\\begin{tabular}\{[^}]*\}(.*?)\\end{tabular}.*?\\end{table}'
-    match = re.search(pattern, latex_content, re.DOTALL)
+        str | None: The inner tabular environment of the matched table as a string, 
+                    or None if no table with the given label is found.
+    """    
     
+    pattern = (
+        r'\\begin{table}.*?'          
+        r'\\label{' + re.escape(target_label) + r'}.*?'  
+        r'\\begin{tabular}\{[^}]*\}' 
+        r'(.*?)'                     
+        r'\\end{tabular}.*?'         
+        r'\\end{table}'              
+    )
+
+    match = re.search(pattern, latex_content, re.DOTALL)
+
     if match:
         return match.group(1)
     return None
 
-def extract_references_from_table(table_content):
+def extract_references_from_table(table_content: str) -> list[str]:
     """
-    Extract references from table content
+    Extract reference identifiers from LaTeX table content.
 
     Args:
-        table: table to extract refs from
+        table_content (str): The LaTeX content of a table (typically the tabular body).
 
     Returns:
-        list with refs
+        list[str]: A de-duplicated list of references found within the table. 
     """
+    
     references = []
     
-    # Look for \ref{} commands
     ref_matches = re.findall(r'\\ref{([^}]+)}', table_content)
     references.extend(ref_matches)
     
-    # Look for patterns like "tabela_IP_B" or similar reference patterns
     text_refs = re.findall(r'tabela[_\s]*([A-Za-z0-9_-]+)', table_content, re.IGNORECASE)
     references.extend([f"table:{ref}" for ref in text_refs])
     
-    # Look for other reference patterns
     other_refs = re.findall(r'table[_\s]*([A-Za-z0-9_-]+)', table_content, re.IGNORECASE)
     references.extend([f"table:{ref}" for ref in other_refs])
     
     return list(set(references))
 
-def clean_table_content(table_content):
+def clean_table_content(table_content : str) -> list[str]:
     """
-    Clean LaTeX table content and convert to CSV-ready format
+    Clean and normalize LaTeX table content into a CSV row format.
 
     Args:
-        table:  table input
+        table_content (str): Raw LaTeX tabular environment content.
 
     Returns:
-        clean table fitting the csv format
+        list[str]: A list of cleaned table rows as strings, ready for CSV export.
+                   Each string corresponds to a single row (split on '\\\\').
     """
     table_content = table_content.strip()
     
-    # Remove LaTeX commands
+    # Remove LaTeX macros
     table_content = re.sub(r'\\(?:hline|toprule|midrule|bottomrule|cline\{[^}]*\})', '', table_content)
     
     # Handle multirow and multicolumn commands
@@ -72,3 +81,30 @@ def clean_table_content(table_content):
     rows = re.split(r'\\\\', table_content)
 
     return rows
+
+def get_main_table_label(latex_content: str) -> str:
+    """
+    Extract the label of the main table from LaTeX content.
+
+    Args:
+        latex_content (str): Full LaTeX document content as a string.
+
+    Returns:
+        str: The label of the main table, or an empty string if not found.
+    """
+    
+        print("Processing LaTeX tables...\n")
+    
+    #Find the main system address map table
+    main_table_label = "table:system_address_map"
+    main_table_content = extract_table_with_label(latex_content, main_table_label)
+    
+    if not main_table_content:
+        print(f"Error: Could not find table with label '{main_table_label}'")
+        return False
+    
+    print(f"Found main table: {main_table_label}")
+    
+    main_csv = convert2csv(table_content=main_table_content)
+    
+    return ''
