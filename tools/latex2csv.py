@@ -3,24 +3,9 @@ import os
 import csv
 from pathlib import Path
 
-def extract_table_with_label(latex_content, target_label):
-    """
-    Extract a specific table by its label
+sys.path.append("tools/utils/")
 
-    Args:
-        latex_content: latex content inside the .text
-        target_label:  label that is gonna be used to search for
-
-    Returns:
-        table with match of ref
-    """
-    # Pattern to match table with specific label
-    pattern = r'\\begin{table}.*?\\label{' + re.escape(target_label) + r'}.*?\\begin{tabular}\{[^}]*\}(.*?)\\end{tabular}.*?\\end{table}'
-    match = re.search(pattern, latex_content, re.DOTALL)
-    
-    if match:
-        return match.group(1)
-    return None
+from utils import extract_table_with_label
 
 def extract_references_from_table(table_content):
     """
