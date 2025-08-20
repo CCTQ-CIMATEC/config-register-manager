@@ -1,1 +1,1 @@
-from latex_parser import extract_table_with_label, extract_references_from_table, clean_table_content
+from .latex_parser import extract_table_with_label, extract_references_from_table, clean_table_content
