@@ -82,21 +82,18 @@ def clean_table_content(table_content : str) -> list[str]:
 
     return rows
 
-def get_main_table_label(latex_content: str) -> str:
+def get_main_table_label(latex_content: str, main_table_label: str) -> str:
     """
     Extract the label of the main table from LaTeX content.
 
     Args:
         latex_content (str): Full LaTeX document content as a string.
+        main_table_label (str): The label identifier of the main table to extract.
 
     Returns:
         str: The label of the main table, or an empty string if not found.
     """
     
-        print("Processing LaTeX tables...\n")
-    
-    #Find the main system address map table
-    main_table_label = "table:system_address_map"
     main_table_content = extract_table_with_label(latex_content, main_table_label)
     
     if not main_table_content:
@@ -105,6 +102,4 @@ def get_main_table_label(latex_content: str) -> str:
     
     print(f"Found main table: {main_table_label}")
     
-    main_csv = convert2csv(table_content=main_table_content)
-    
-    return ''
+    return main_table_content

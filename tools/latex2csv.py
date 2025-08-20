@@ -3,7 +3,7 @@ import os
 import csv
 import sys
 
-from utils import extract_table_with_label, extract_references_from_table, clean_table_content
+from utils import extract_table_with_label, extract_references_from_table, clean_table_content, get_main_table_label
 
 def convert2csv(table_content):
     """
@@ -75,7 +75,7 @@ def save_table_to_csv(csv_rows, output_file):
     
     print(f"  Saved: {output_file} ({len(csv_rows)} rows)")
 
-def process_latex_tables(latex_content, output_dir="build"):
+def process_latex_tables(latex_content : str, output_dir="build") -> bool:
     """
     Main function to process LaTeX tables based on the system address map
 
@@ -86,25 +86,17 @@ def process_latex_tables(latex_content, output_dir="build"):
     Returns:
         True if operation sucessufl
     """
+    
     print("Processing LaTeX tables...\n")
-    
-    #Find the main system address map table
-    main_table_label = "table:system_address_map"
-    main_table_content = extract_table_with_label(latex_content, main_table_label)
-    
-    if not main_table_content:
-        print(f"Error: Could not find table with label '{main_table_label}'")
-        return False
-    
-    print(f"Found main table: {main_table_label}")
-    
-    main_csv = convert2csv(table_content=main_table_content)
+
+    main_table = get_main_table_label(latex_content, "table:system_address_map")
+    main_csv = convert2csv(table_content=main_table)
 
     main_name = os.path.join(output_dir, f"table_main.csv")
     save_table_to_csv(csv_rows=main_csv, output_file=main_name)
 
     #extract references from the main table
-    references = extract_references_from_table(main_table_content)
+    references = extract_references_from_table(main_table)
     print(f"Found references: {references}")
     
     #go through the refs
