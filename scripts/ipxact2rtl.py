@@ -280,6 +280,7 @@ def generate_module(ipxact_data, output_dir):
             f.write("    input wire clk,\n")
             f.write("    input wire rst,\n\n")
             
+            f.write("    input wire i_req_enable,\n")
             f.write("    input wire i_write_enable,\n")
             f.write(f"    input wire [{addr_width}:0] i_addr,\n")
             f.write(f"    input wire [{data_width}:0] i_wdata,\n")
@@ -333,7 +334,7 @@ def generate_module(ipxact_data, output_dir):
             f.write("    end\n\n")
             
             # Sinais de controle
-            f.write("    assign decoded_req = i_write_enable;\n")
+            f.write("    assign decoded_req = i_req_enable;\n")
             f.write("    assign decoded_req_is_wr = i_write_enable;\n")
             f.write("    assign decoded_wr_data = i_wdata;\n")
             f.write(f"    assign decoded_wr_biten = i_wdata_biten;\n\n")
