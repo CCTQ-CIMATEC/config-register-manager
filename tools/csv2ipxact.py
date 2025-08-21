@@ -56,7 +56,7 @@ def read_csv_data(csv_file):
 def convert_all_csv_to_ipxact(bus_size="32"):
     """Convert all CSV files to a single IP-XACT XML file"""
     
-    build_path = Path("build")
+    build_path = Path("build/csv")
     csv_files = list(build_path.glob('RegisterMap_*.csv'))
 
     #pura gambiarra
@@ -64,10 +64,13 @@ def convert_all_csv_to_ipxact(bus_size="32"):
     with open ("build/csv/table_main.csv", mode="r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            print(f"{row}")
             row["IP"] = re.sub("IP ", "IP-", row["IP"])
             row["Base Address"] = re.sub(" ", "", row["Base Address"])
             base_addresses[row["IP"]] = row["Base Address"]
             
+    print(f" CSV: {csv_files} \n")
+
     if not csv_files:
         print(f"No IPs specific CSV files found in directory: {build_path}")
         return False

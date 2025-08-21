@@ -32,9 +32,13 @@ def convert2csv(table_content):
         for cell in cells:
             cell = cell.strip()
             # Remove remaining LaTeX commands
+            print(f"1: {cell}")
             cell = re.sub(r'\\[a-zA-Z]+(?:\{[^}]*\})*', '', cell)
+            print(f"2: {cell}")
             cell = re.sub(r'\\_', ' ', cell)
+            print(f"3: {cell}")
             cell = re.sub(r'\s+', ' ', cell)
+            print(f"4: {cell}")
             cleaned_cells.append(cell.strip())
             
         
