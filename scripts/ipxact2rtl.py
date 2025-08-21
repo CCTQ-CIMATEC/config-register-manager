@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import os
 import sys
+import math
 from datetime import datetime
 from pathlib import Path
 
@@ -35,12 +36,27 @@ def parse_ipxact(input_xml):
         registers = {}
         enum_definitions = {}  # Nome do enum -> valores
         enum_cache = {}        # Assinatura -> enum_name
+        address_info = {}      # Informações de endereçamento
 
         for addr_block in component.findall('.//ipxact:addressBlock', NS):
+            base_address = addr_block.find('ipxact:baseAddress', NS)
+            base_addr = int(base_address.text, 0) if base_address is not None else 0
+            
             for reg in addr_block.findall('ipxact:register', NS):
                 reg_name = reg.find('ipxact:name', NS).text
                 offset = reg.find('ipxact:addressOffset', NS).text
                 size = int(reg.find('ipxact:size', NS).text) if reg.find('ipxact:size', NS) is not None else 32
+                
+                # Calcula endereço absoluto e índice
+                abs_offset = int(offset, 0)
+                reg_index = abs_offset // (size // 8)  # Assumindo alinhamento por palavra
+                
+                address_info[reg_name] = {
+                    'offset': offset,
+                    'abs_offset': abs_offset,
+                    'index': reg_index,
+                    'size': size
+                }
                 
                 fields = {}
                 for field in reg.findall('ipxact:field', NS):
@@ -98,7 +114,8 @@ def parse_ipxact(input_xml):
         return {
             'name': name,
             'registers': registers,
-            'enums': enum_definitions
+            'enums': enum_definitions,
+            'address_info': address_info
         }
     
     except Exception as e:
@@ -152,7 +169,7 @@ def generate_package(ipxact_data, output_dir):
                         clean_name = name.replace('\\', '').replace(' ', '_')
                         f.write(f"        {clean_name} = {value},\n")
                     first_key = list(enum_values.keys())[0]
-                    f.write(f"        {enum_name.upper()}_DEFAULT = {first_key},\n")
+                    f.write(f"        {enum_name.upper()}_DEFAULT = {first_key}\n")
                     f.write(f"    }} {enum_name};\n\n")
             
             # Gera typedef structs para entrada (hardware -> registrador)
@@ -232,21 +249,94 @@ def generate_package(ipxact_data, output_dir):
         print(f"Falha ao gerar package: {str(e)}", file=sys.stderr)
         return False
 
-def generate_logic(ipxact_data, output_dir):
-    """Gera o arquivo de lógica SystemVerilog."""
+def generate_module(ipxact_data, output_dir):
+    """Gera o módulo SystemVerilog completo."""
     try:
         output_path = get_absolute_path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
-        output_file = output_path / f"{ipxact_data['name']}_logic.sv"
+        output_file = output_path / f"{ipxact_data['name']}.sv"
         
         component_name = ipxact_data['name']
         registers = ipxact_data['registers']
         enums = ipxact_data.get('enums', {})
+        address_info = ipxact_data.get('address_info', {})
+        
+        # Calcula largura do endereço e dados
+        max_size = max([info['size'] for info in registers.values()]) if registers else 32
+        data_width = max_size - 1
+        
+        # Calcula largura do endereço baseado no número de registradores
+        num_regs = len(registers)
+        addr_width = max(math.ceil(math.log2(num_regs)) - 1, 0) if num_regs > 1 else 0
         
         with open(output_file, 'w', encoding='utf-8') as f:
-            # Cabeçalho
-            f.write(f"// Lógica {component_name} - Gerado automaticamente em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write("// Lógica dos registradores CSR\n\n")
+            # Cabeçalho e import do package
+            f.write(f"// Módulo {component_name} - Gerado automaticamente em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("// Módulo CSR completo\n\n")
+            f.write(f"import {component_name}_pkg::*;\n\n")
+            
+            # Declaração do módulo
+            f.write(f"module {component_name} (\n")
+            f.write("    input wire clk,\n")
+            f.write("    input wire rst,\n\n")
+            
+            f.write("    input wire i_write_enable,\n")
+            f.write(f"    input wire [{addr_width}:0] i_addr,\n")
+            f.write(f"    input wire [{data_width}:0] i_wdata,\n")
+            f.write(f"    input wire [{data_width}:0] i_wdata_biten,\n")
+            f.write("    output logic o_pready,\n")
+            f.write(f"    output logic [{data_width}:0] o_rdata,\n")
+            f.write("    output logic o_err,\n\n")
+            
+            # Interfaces HW se existirem campos que precisam
+            hw_input_regs = [r for r, info in registers.items() 
+                            if any(needs_hw_input(f_info) for f_info in info['fields'].values())]
+            if hw_input_regs:
+                f.write(f"    input {component_name}__in_t hwif_in,\n")
+            f.write(f"    output {component_name}__out_t hwif_out\n")
+            f.write(");\n\n")
+            
+            # Sinais internos
+            f.write("    logic cpuif_rd_ack;\n")
+            f.write("    logic cpuif_rd_err;\n")
+            f.write("    logic cpuif_wr_ack;\n")
+            f.write("    logic cpuif_wr_err;\n")
+            f.write(f"    logic [{data_width}:0] cpuif_rd_data;\n")
+            f.write(f"    logic [{addr_width}:0] cpuif_addr;\n\n")
+            
+            # Mapeamento de sinais
+            f.write("    assign cpuif_addr = i_addr;\n")
+            f.write("    assign o_pready = cpuif_rd_ack | cpuif_wr_ack;\n")
+            f.write("    assign o_rdata = cpuif_rd_data;\n")
+            f.write("    assign o_err = cpuif_rd_err | cpuif_wr_err;\n\n")
+            
+            # Struct para decodificação de registradores
+            f.write("    typedef struct {\n")
+            for reg_name in registers.keys():
+                f.write(f"        logic {reg_name};\n")
+            f.write("    } decoded_reg_strb_t;\n\n")
+            
+            f.write("    decoded_reg_strb_t decoded_reg_strb;\n")
+            f.write("    logic decoded_req;\n")
+            f.write("    logic decoded_req_is_wr;\n")
+            f.write(f"    logic [{data_width}:0] decoded_wr_data;\n")
+            f.write(f"    logic [{data_width}:0] decoded_wr_biten;\n\n")
+            
+            # Lógica de decodificação de endereço
+            f.write("    always_comb begin\n")
+            reg_list = list(registers.keys())
+            for i, reg_name in enumerate(reg_list):
+                if addr_width > 0:
+                    f.write(f"        decoded_reg_strb.{reg_name} = (cpuif_addr == {addr_width+1}'h{i:x});\n")
+                else:
+                    f.write(f"        decoded_reg_strb.{reg_name} = 1'b1;\n")
+            f.write("    end\n\n")
+            
+            # Sinais de controle
+            f.write("    assign decoded_req = i_write_enable;\n")
+            f.write("    assign decoded_req_is_wr = i_write_enable;\n")
+            f.write("    assign decoded_wr_data = i_wdata;\n")
+            f.write(f"    assign decoded_wr_biten = i_wdata_biten;\n\n")
             
             # Estruturas de combinacional e storage
             f.write("    //--------------------------------------------------------------------------\n")
@@ -364,12 +454,71 @@ def generate_logic(ipxact_data, output_dir):
                         f.write(f"    assign hwif_out.{reg_name}.{field_name}.value = field_storage.{reg_name}.{field_name}.value;\n")
                     
                     f.write("\n")
-        
-        print(f"Lógica gerada: {output_file}")
+            
+            # Write response
+            f.write("    //--------------------------------------------------------------------------\n")
+            f.write("    // Write response\n")
+            f.write("    //--------------------------------------------------------------------------\n")
+            f.write("    assign cpuif_wr_ack = decoded_req & decoded_req_is_wr;\n")
+            f.write("    // Writes are always granted with no error response\n")
+            f.write("    assign cpuif_wr_err = '0;\n\n")
+            
+            # Readback logic
+            f.write("    //--------------------------------------------------------------------------\n")
+            f.write("    // Readback\n")
+            f.write("    //--------------------------------------------------------------------------\n\n")
+            
+            f.write("    logic readback_err;\n")
+            f.write("    logic readback_done;\n")
+            f.write(f"    logic [{data_width}:0] readback_data;\n\n")
+            
+            # Array de readback
+            num_regs = len(registers)
+            f.write(f"    // Assign readback values to a flattened array\n")
+            f.write(f"    logic [{data_width}:0] readback_array[{num_regs}];\n")
+            
+            reg_idx = 0
+            for reg_name, reg_info in registers.items():
+                # Inicializa o array para este registrador
+                f.write(f"    assign readback_array[{reg_idx}] = '0;\n")
+                
+                # Atribui campos legíveis
+                for field_name, field_info in reg_info['fields'].items():
+                    if field_info['access'] != 'write-only':
+                        bit_select = f"[{field_info['bit_offset']+field_info['bit_width']-1}:{field_info['bit_offset']}]" if field_info['bit_width'] > 1 else f"[{field_info['bit_offset']}]"
+                        
+                        # Verifica se é um campo especial de hardware input
+                        if needs_hw_input(field_info) and field_info['access'] == 'read-only':
+                            f.write(f"    assign readback_array[{reg_idx}]{bit_select} = (decoded_reg_strb.{reg_name} && !decoded_req_is_wr) ? hwif_in.{reg_name}.{field_name}.next : '0;\n")
+                        else:
+                            f.write(f"    assign readback_array[{reg_idx}]{bit_select} = (decoded_reg_strb.{reg_name} && !decoded_req_is_wr) ? field_storage.{reg_name}.{field_name}.value : '0;\n")
+                
+                reg_idx += 1
+            
+            f.write("\n")
+            
+            # Reduce array
+            f.write("    // Reduce the array\n")
+            f.write("    always_comb begin\n")
+            f.write(f"        automatic logic [{data_width}:0] readback_data_var;\n")
+            f.write("        readback_done = decoded_req & ~decoded_req_is_wr;\n")
+            f.write("        readback_err = '0;\n")
+            f.write("        readback_data_var = '0;\n")
+            f.write(f"        for(int i=0; i<{num_regs}; i++) readback_data_var |= readback_array[i];\n")
+            f.write("        readback_data = readback_data_var;\n")
+            f.write("    end\n\n")
+            
+            f.write("    assign cpuif_rd_ack = readback_done;\n")
+            f.write("    assign cpuif_rd_data = readback_data;\n")
+            f.write("    assign cpuif_rd_err = readback_err;\n\n")
+            
+            f.write("endmodule\n")
+
+            print(f"Lógica gerada: {output_file}")
         return True
     
     except Exception as e:
-        print(f"Falha ao gerar lógica: {str(e)}", file=sys.stderr)
+        print(f"Falha ao gerar modulo: {str(e)}", file=sys.stderr)
         return False
 
 if __name__ == "__main__":
@@ -385,7 +534,7 @@ if __name__ == "__main__":
 
     if ip_data:
         pkg_success = generate_package(ip_data, OUTPUT_DIR)
-        logic_success = generate_logic(ip_data, OUTPUT_DIR)
+        logic_success = generate_module(ip_data, OUTPUT_DIR)
         
         if pkg_success and logic_success:
             print(f"✅ Conversão concluída! Verifique {OUTPUT_DIR}")

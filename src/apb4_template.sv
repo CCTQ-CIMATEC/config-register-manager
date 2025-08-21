@@ -1,158 +1,85 @@
-module {{MODULE_NAME}} (
-        input wire clk,
-        input wire rst,
+module apb4_slave #(
+    parameter ADDR_WIDTH = 3,
+    parameter DATA_WIDTH = 32
+)(
+    input wire clk,
+    input wire rst,
+    input apb4_intf.slave s_apb,
 
-        apb4_intf.slave s_apb,
+    // CPU Interface outputs
+    output logic                    cpuif_req,
+    output logic                    cpuif_req_is_wr,
+    output logic [ADDR_WIDTH-1:0]   cpuif_addr,
+    output logic [DATA_WIDTH-1:0]   cpuif_wr_data,
+    output logic [DATA_WIDTH-1:0]   cpuif_wr_biten,
+    output logic                    cpuif_req_stall_wr,
+    output logic                    cpuif_req_stall_rd,
 
-        // Hardware Interface
-        input {{PACKAGE_NAME}}::{{MODULE_NAME}}__in_t hwif_in,
-        output {{PACKAGE_NAME}}::{{MODULE_NAME}}__out_t hwif_out
-    );
-
-    //--------------------------------------------------------------------------
-    // CPU Bus interface logic
-    //--------------------------------------------------------------------------
-    logic cpuif_req;
-    logic cpuif_req_is_wr;
-    logic [{{ADDR_WIDTH-1}}:0] cpuif_addr;
-    logic [{{DATA_WIDTH-1}}:0] cpuif_wr_data;
-    logic [{{DATA_WIDTH-1}}:0] cpuif_wr_biten;
-    logic cpuif_req_stall_wr;
-    logic cpuif_req_stall_rd;
-
-    logic cpuif_rd_ack;
-    logic cpuif_rd_err;
-    logic [{{DATA_WIDTH-1}}:0] cpuif_rd_data;
-
-    logic cpuif_wr_ack;
-    logic cpuif_wr_err;
+    // CPU Interface inputs
+    input  logic                    cpuif_rd_ack,
+    input  logic                    cpuif_rd_err,
+    input  logic [DATA_WIDTH-1:0]   cpuif_rd_data,
+    input  logic                    cpuif_wr_ack,
+    input  logic                    cpuif_wr_err
+);
 
     //--------------------------------------------------------------------------
-    // Assertions for Interface Validation
+    // Internal signals
     //--------------------------------------------------------------------------
-    `ifndef SYNTHESIS
-        initial begin
-            assert_bad_addr_width: assert($bits(s_apb_paddr) >= {{PACKAGE_NAME}}::{{MIN_ADDR_WIDTH_PARAM}})
-                else $error("Interface address width of %0d is too small. Shall be at least %0d bits", $bits(s_apb_paddr), {{PACKAGE_NAME}}::{{MIN_ADDR_WIDTH_PARAM}});
-            assert_bad_data_width: assert($bits(s_apb_pwdata) == {{PACKAGE_NAME}}::{{DATA_WIDTH_PARAM}})
-                else $error("Interface data width of %0d is incorrect. Shall be %0d bits", $bits(s_apb_pwdata), {{PACKAGE_NAME}}::{{DATA_WIDTH_PARAM}});
-        end
-    `endif
-
-    // Request handling state machine
     logic is_active;
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            is_active <= '0;
-            cpuif_req <= '0;
-            cpuif_req_is_wr <= '0;
-            cpuif_addr <= '0;
-            cpuif_wr_data <= '0;
-            cpuif_wr_biten <= '0;
+    logic psel_prev;
+
+    //--------------------------------------------------------------------------
+    // APB4 Request Detection
+    //--------------------------------------------------------------------------
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            is_active        <= 1'b0;
+            psel_prev        <= 1'b0;
+            cpuif_req        <= 1'b0;
+            cpuif_req_is_wr  <= 1'b0;
+            cpuif_addr       <= '0;
+            cpuif_wr_data    <= '0;
+            cpuif_wr_biten   <= '0;
         end else begin
-            if(~is_active) begin
-                if(s_apb_psel) begin
-                    is_active <= '1;
-                    cpuif_req <= '1;
-                    cpuif_req_is_wr <= s_apb_pwrite;
-                    cpuif_addr <= s_apb_paddr[{{ADDR_WIDTH-1}}:0];
-                    cpuif_wr_data <= s_apb_pwdata;
-                    for(int i=0; i<1; i++) begin
-                        cpuif_wr_biten[i*8 +: 8] <= {8{s_apb.PSTRB[i]}};
-                    end
+            // Store previous psel for edge detection
+            psel_prev <= s_apb.psel;
+
+            if (!is_active) begin
+                // Detect rising edge of psel to start new transaction
+                if (s_apb.psel && !psel_prev) begin
+                    is_active           <= 1'b1;
+                    cpuif_req           <= 1'b1;
+                    cpuif_req_is_wr     <= s_apb.pwrite;
+                    cpuif_addr          <= s_apb.paddr[ADDR_WIDTH-1:0];
+                    cpuif_wr_data       <= s_apb.pwdata;
+                    cpuif_wr_biten      <= s_apb.pstrb;
+                end else begin
+                    cpuif_req <= 1'b0;
                 end
             end else begin
-                cpuif_req <= '0;
-                if(cpuif_rd_ack || cpuif_wr_ack) begin
-                    is_active <= '0;
+                // Clear request after one cycle
+                cpuif_req <= 1'b0;
+                
+                // End transaction when response is received
+                if (cpuif_rd_ack || cpuif_wr_ack) begin
+                    is_active <= 1'b0;
                 end
             end
         end
     end
 
-    // APB4 Response signals
-    assign s_apb_pready = cpuif_rd_ack | cpuif_wr_ack;
-    assign s_apb_prdata = cpuif_rd_data;
-    assign s_apb_pslverr = cpuif_rd_err | cpuif_wr_err;
-
-    logic cpuif_req_masked;
-
-    // Read & write latencies are balanced. Stalls not required
-    assign cpuif_req_stall_rd = '0;
-    assign cpuif_req_stall_wr = '0;
-    assign cpuif_req_masked = cpuif_req
-                            & !(!cpuif_req_is_wr & cpuif_req_stall_rd)
-                            & !(cpuif_req_is_wr & cpuif_req_stall_wr);
+    //--------------------------------------------------------------------------
+    // APB4 Response Signals
+    //--------------------------------------------------------------------------
+    assign s_apb.pready  = cpuif_rd_ack | cpuif_wr_ack;
+    assign s_apb.prdata  = cpuif_rd_data;
+    assign s_apb.pslverr = cpuif_rd_err | cpuif_wr_err;
 
     //--------------------------------------------------------------------------
-    // Address Decode
+    // Stall signals (not used in this implementation)
     //--------------------------------------------------------------------------
-    typedef struct {
-        {{REGISTER_DECODE_STRUCT}}
-    } decoded_reg_strb_t;
-    
-    decoded_reg_strb_t decoded_reg_strb;
-    logic decoded_req;
-    logic decoded_req_is_wr;
-    logic [{{DATA_WIDTH-1}}:0] decoded_wr_data;
-    logic [{{DATA_WIDTH-1}}:0] decoded_wr_biten;
-
-    always_comb begin
-        {{REGISTER_DECODE_LOGIC}}
-    end
-
-    // Pass down signals to next stage
-    assign decoded_req = cpuif_req_masked;
-    assign decoded_req_is_wr = cpuif_req_is_wr;
-    assign decoded_wr_data = cpuif_wr_data;
-    assign decoded_wr_biten = cpuif_wr_biten;
-
-    //--------------------------------------------------------------------------
-    // Register Field Storage
-    //--------------------------------------------------------------------------
-    {{FIELD_STORAGE_DECLARATION}}
-
-    //--------------------------------------------------------------------------
-    // Register Field Logic
-    //--------------------------------------------------------------------------
-    {{REGISTER_LOGIC}}
-
-    //--------------------------------------------------------------------------
-    // Hardware Interface Assignments
-    //--------------------------------------------------------------------------
-    {{HWIF_ASSIGNMENTS}}
-
-    //--------------------------------------------------------------------------
-    // Write response
-    //--------------------------------------------------------------------------
-    assign cpuif_wr_ack = decoded_req & decoded_req_is_wr;
-    // Writes are always granted with no error response
-    assign cpuif_wr_err = '0;
-
-    //--------------------------------------------------------------------------
-    // Readback Logic
-    //--------------------------------------------------------------------------
-    logic readback_err;
-    logic readback_done;
-    logic [{{DATA_WIDTH-1}}:0] readback_data;
-
-    // Assign readback values to a flattened array
-    logic [{{DATA_WIDTH-1}}:0] readback_array[{{NUM_REGISTERS}}];
-    
-    {{READBACK_ASSIGNMENTS}}
-
-    // Reduce the array
-    always_comb begin
-        automatic logic [{{DATA_WIDTH-1}}:0] readback_data_var;
-        readback_done = decoded_req & ~decoded_req_is_wr;
-        readback_err = '0;
-        readback_data_var = '0;
-        for(int i=0; i<{{NUM_REGISTERS}}; i++) readback_data_var |= readback_array[i];
-        readback_data = readback_data_var;
-    end
-
-    assign cpuif_rd_ack = readback_done;
-    assign cpuif_rd_data = readback_data;
-    assign cpuif_rd_err = readback_err;
+    assign cpuif_req_stall_wr = 1'b0;
+    assign cpuif_req_stall_rd = 1'b0;
 
 endmodule
