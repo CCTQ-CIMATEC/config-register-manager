@@ -118,7 +118,7 @@ def process_latex_tables(latex_content : str, output_dir="build") -> bool:
 
 def main():
     tex_file = "src/ipMap.tex"
-    output_dir = "build"
+    output_dir = "build/csv"
     
     if not os.path.exists(tex_file):
         print(f"Error: File not found: {tex_file}")

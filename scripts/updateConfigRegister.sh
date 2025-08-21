@@ -28,7 +28,7 @@ done
 echo "🔄 Iniciando pipeline de tradução LaTeX -> RTL"
 
 echo "Etapa 1: Convertendo LaTeX para CSV..."
-if ! python3 scripts/latex2csv.py; then
+if ! python3 tools/latex2csv.py; then
     error_exit "LaTeX para CSV"
 fi
 
