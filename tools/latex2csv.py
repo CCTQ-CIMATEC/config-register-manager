@@ -3,7 +3,7 @@ import os
 import csv
 import sys
 
-from utils import extract_table_with_label, extract_references_from_table, clean_table_content, get_main_table_label
+from utils import *
 
 def convert2csv(table_content):
     """
