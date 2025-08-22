@@ -2,6 +2,8 @@
 set -euo pipefail
 
 BUS_WIDTH=32
+ADDR_WIDTH=3
+BUS_PROTOCOL=apb4
 BUILD_DIR="build"
 
 # Função para exibir erro e sair
@@ -40,6 +42,11 @@ fi
 echo "Etapa 3: Gerando RTL a partir do IP-XACT..."
 if ! scripts/ipxact2rtl.sh; then
     error_exit "IP-XACT para RTL"
+fi
+
+echo "Etapa 4: Gerando conexão com barramento para o RegMap (BUS_WIDTH=${BUS_WIDTH}, ADDR_WIDTH=${ADDR_WIDTH}, BUS_PROTOCOL=${BUS_PROTOCOL})..."
+if ! python scripts/gen_bus_csr.py --bus "${BUS_PROTOCOL}" --data-width "${BUS_WIDTH}" --addr-width "${ADDR_WIDTH}"; then
+    error_exit "CSV para IP-XACT"
 fi
 
 echo "✅ Pipeline concluído com sucesso!"

@@ -1,205 +1,311 @@
-#!/usr/bin/env python3
 """
-Script para gerar módulo APB4 a partir do template e lógica CSR gerada.
-Lê CSR_IP_Map_logic.sv e apb4_template.sv para gerar apb4_csr.sv
+Gerador de RTL para módulo APB4 CSR Top
+Autor: Script Python para geração automatizada
 """
 
-import re
 import os
-import math
+import shutil
+import argparse
 from pathlib import Path
 
-def extract_register_decode_struct(logic_content):
-    """Extrai a estrutura de decodificação de registradores"""
-    pattern = r'typedef struct\s*\{(.*?)\}\s*decoded_reg_strb_t;'
-    match = re.search(pattern, logic_content, re.DOTALL)
-    if match:
-        # Limpa e formata o conteúdo
-        struct_content = match.group(1).strip()
-        # Remove comentários e espaços extras
-        lines = [line.strip() for line in struct_content.split('\n') if line.strip()]
-        return '\n        '.join(lines)
-    return ""
+class APB4RTLGenerator:
+    def __init__(self, bus_type="apb4", data_width=32, addr_width=8):
+        self.bus_type = bus_type.lower()
+        self.data_width = data_width
+        self.addr_width = addr_width
+        self.build_dir = Path("build/rtl")
+        self.src_dir = Path("src/rtl/apb")
+        
+    def create_directories(self):
+        """Cria o diretório build/rtl se não existir"""
+        self.build_dir.mkdir(parents=True, exist_ok=True)
+        print(f"✓ Diretório {self.build_dir} criado/verificado")
+    
+    def copy_source_files(self):
+        """Copia os arquivos necessários do diretório src para build"""
+        source_files = [
+            "apb4_interface.sv",
+            "apb4_template.sv"
+        ]
+        
+        for file_name in source_files:
+            src_file = self.src_dir / file_name
+            dst_file = self.build_dir / file_name
+            
+            if src_file.exists():
+                shutil.copy2(src_file, dst_file)
+                print(f"✓ Arquivo {file_name} copiado para {self.build_dir}")
+            else:
+                print(f"⚠ Arquivo {src_file} não encontrado")
+    
+    def generate_bus_interface_params(self):
+        """Gera os parâmetros específicos do barramento"""
+        if self.bus_type == "apb4":
+            return {
+                "bus_interface_name": "apb4_intf",
+                "slave_interface": "apb4_intf.slave",
+                "bus_connection": "apb4_intf.BUS",
+                "reg_map_connection": "apb4_intf.REG_MAP"
+            }
+        elif self.bus_type == "axi4":
+            return {
+                "bus_interface_name": "axi4_intf",
+                "slave_interface": "axi4_intf.slave",
+                "bus_connection": "axi4_intf.BUS",
+                "reg_map_connection": "axi4_intf.REG_MAP"
+            }
+        else:
+            # Default para APB4
+            return {
+                "bus_interface_name": "apb4_intf",
+                "slave_interface": "apb4_intf.slave",
+                "bus_connection": "apb4_intf.BUS",
+                "reg_map_connection": "apb4_intf.REG_MAP"
+            }
+    
+    def generate_rtl_content(self):
+        """Gera o conteúdo do arquivo SystemVerilog"""
+        bus_params = self.generate_bus_interface_params()
+        
+        # Calcula a largura do endereço necessária para o CSR
+        csr_addr_width = max(3, (self.addr_width - 2))  # Mínimo 3 bits, remove 2 bits para word alignment
+        
+        rtl_content = f'''//------------------------------------------------------------------------------
+// Module: {self.bus_type}_csr_top
+// Description: Top-level module for {self.bus_type.upper()} CSR interface
+// Generated automatically by Python script
+//------------------------------------------------------------------------------
 
-def extract_register_decode_logic(logic_content):
-    """Extrai a lógica de decodificação de registradores"""
-    pattern = r'always_comb begin\s*(.*?decoded_reg_strb\..*?)\s*end'
-    match = re.search(pattern, logic_content, re.DOTALL)
-    if match:
-        logic_lines = match.group(1).strip().split('\n')
-        # Filtra apenas as linhas de decodificação
-        decode_lines = [line.strip() for line in logic_lines 
-                       if 'decoded_reg_strb.' in line and line.strip()]
-        return '\n        '.join(decode_lines)
-    return ""
+module {self.bus_type}_csr_top #(
+    parameter DATA_WIDTH = {self.data_width},
+    parameter ADDR_WIDTH = {self.addr_width},
+    parameter CSR_ADDR_WIDTH = {csr_addr_width}
+) (
+    input wire clk,
+    input wire rst,
+    
+    // {self.bus_type.upper()} Interface
+    {bus_params['slave_interface']} s_{self.bus_type},
+    
+    // Hardware Interface
+    input  CSR_IP_Map__in_t  hwif_in,
+    output CSR_IP_Map__out_t hwif_out
+);
 
-def extract_field_storage_declaration(logic_content):
-    """Extrai as declarações de armazenamento de campos"""
-    # Procura pelas estruturas field_combo_t e field_storage_t
-    pattern1 = r'typedef struct\s*\{(.*?)\}\s*field_combo_t;'
-    pattern2 = r'typedef struct\s*\{(.*?)\}\s*field_storage_t;'
-    
-    combo_match = re.search(pattern1, logic_content, re.DOTALL)
-    storage_match = re.search(pattern2, logic_content, re.DOTALL)
-    
-    result = ""
-    if combo_match:
-        result += f"typedef struct {{\n{combo_match.group(1).strip()}\n}} field_combo_t;\n"
-        result += "field_combo_t field_combo;\n\n"
-    
-    if storage_match:
-        result += f"typedef struct {{\n{storage_match.group(1).strip()}\n}} field_storage_t;\n"
-        result += "field_storage_t field_storage;"
-    
-    return result
+    //--------------------------------------------------------------------------
+    // Local Parameters
+    //--------------------------------------------------------------------------
+    localparam P_DATA_WIDTH = DATA_WIDTH;
+    localparam P_DMEM_ADDR_WIDTH = ADDR_WIDTH;
+    localparam P_CSR_ADDR_WIDTH = CSR_ADDR_WIDTH;
 
-def extract_register_logic(logic_content):
-    """Extrai toda a lógica dos registradores (Field logic)"""
-    # Procura desde "// Field:" até antes de "READBACK_ASSIGNMENTS"
-    pattern = r'// Field:.*?(?=//\s*-+\s*READBACK_ASSIGNMENTS|$)'
-    match = re.search(pattern, logic_content, re.DOTALL)
-    if match:
-        return match.group(0).strip()
-    return ""
+    //--------------------------------------------------------------------------
+    // Bus Interface Instance
+    //--------------------------------------------------------------------------
+    bus_interface #(
+        .P_DATA_WIDTH(P_DATA_WIDTH),
+        .P_DMEM_ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
+    ) {bus_params['bus_interface_name']} (
+        .clk(clk), 
+        .reset(rst)
+    );
 
-def extract_readback_assignments(logic_content):
-    """Extrai as atribuições de readback"""
-    pattern = r'//\s*-+\s*READBACK_ASSIGNMENTS\s*//\s*-+(.*?)(?=//|$)'
-    match = re.search(pattern, logic_content, re.DOTALL)
-    if match:
-        assignments = match.group(1).strip()
-        # Remove linhas vazias e formata
-        lines = [line.strip() for line in assignments.split('\n') 
-                if line.strip() and 'assign readback_array' in line]
-        return '\n    '.join(lines)
-    return ""
+    //--------------------------------------------------------------------------
+    // {self.bus_type.upper()} Slave Instance
+    //--------------------------------------------------------------------------
+    {self.bus_type}_slave #(
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) u_{self.bus_type}_slave (
+        .clk(clk),
+        .rst(rst),
+        
+        // {self.bus_type.upper()} Interface
+        .s_{self.bus_type}(s_{self.bus_type}),
+        
+        // Internal Bus Interface
+        .bus_interface({bus_params['bus_connection']})
+    );
 
-def count_registers(logic_content):
-    """Conta o número de registradores baseado nas atribuições de readback"""
-    assignments = extract_readback_assignments(logic_content)
-    if not assignments:
-        return 4  # valor padrão
-    
-    # Encontra o maior índice usado em readback_array
-    pattern = r'readback_array\[(\d+)\]'
-    indices = [int(match.group(1)) for match in re.finditer(pattern, assignments)]
-    return max(indices) + 1 if indices else 4
+    //--------------------------------------------------------------------------
+    // CSR_IP_Map Instance
+    //--------------------------------------------------------------------------
+    CSR_IP_Map #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ADDR_WIDTH(CSR_ADDR_WIDTH)
+    ) u_csr_ip_map (
+        .clk(clk),
+        .rst(rst),
+        
+        // Bus Interface
+        .bus_interface({bus_params['reg_map_connection']}),
+        
+        // Hardware Interface
+        .hwif_in(hwif_in),
+        .hwif_out(hwif_out)
+    );
 
-def determine_addr_width(logic_content):
-    """Determina a largura do endereço baseado na decodificação"""
-    decode_logic = extract_register_decode_logic(logic_content)
-    # Procura por padrões como cpuif_addr == 2'h3
-    pattern = r"cpuif_addr\s*==\s*(\d+)'h([0-9a-fA-F]+)"
-    matches = re.findall(pattern, decode_logic)
-    
-    if matches:
-        # Pega a largura declarada e o maior valor
-        width = int(matches[0][0])  # largura declarada (ex: 2 de 2'h3)
-        max_val = max(int(match[1], 16) for _, match in matches)
-        # Verifica se a largura é suficiente
-        required_width = max_val.bit_length()
-        return max(width, required_width)
-    return 2  # valor padrão
+    //--------------------------------------------------------------------------
+    // Assertions and Coverage (optional)
+    //--------------------------------------------------------------------------
+`ifdef ASSERT_ON
+    // Add assertions here for verification
+    initial begin
+        assert (DATA_WIDTH >= 8) else $error("DATA_WIDTH must be >= 8");
+        assert (ADDR_WIDTH >= 3) else $error("ADDR_WIDTH must be >= 3");
+        assert (CSR_ADDR_WIDTH >= 3) else $error("CSR_ADDR_WIDTH must be >= 3");
+    end
+`endif
 
-def generate_hwif_assignments(logic_content):
-    """Gera as atribuições da interface de hardware baseado na lógica"""
-    # Procura por todas as atribuições hwif_out
-    pattern = r'assign\s+hwif_out\..*?;'
-    matches = re.findall(pattern, logic_content, re.MULTILINE)
-    return '\n    '.join(matches) if matches else ""
+endmodule
 
-def generate_apb4_csr(logic_file_path, template_file_path, output_file_path):
-    """Função principal para gerar o arquivo APB4 CSR"""
+//------------------------------------------------------------------------------
+// End of {self.bus_type}_csr_top
+//------------------------------------------------------------------------------'''
+        
+        return rtl_content
     
-    # Lê os arquivos
-    try:
-        with open(logic_file_path, 'r', encoding='utf-8') as f:
-            logic_content = f.read()
-    except FileNotFoundError:
-        print(f"Erro: Arquivo {logic_file_path} não encontrado!")
-        return False
+    def write_rtl_file(self):
+        """Escreve o arquivo RTL gerado"""
+        rtl_content = self.generate_rtl_content()
+        output_file = self.build_dir / f"{self.bus_type}_csr_top.sv"
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(rtl_content)
+        
+        print(f"✓ Arquivo RTL gerado: {output_file}")
+        return output_file
     
-    try:
-        with open(template_file_path, 'r', encoding='utf-8') as f:
-            template_content = f.read()
-    except FileNotFoundError:
-        print(f"Erro: Arquivo {template_file_path} não encontrado!")
-        return False
+    def generate_makefile(self):
+        """Gera um Makefile básico para compilação"""
+        makefile_content = f'''# Makefile para compilação do {self.bus_type.upper()} CSR Top
+# Gerado automaticamente
+
+# Parâmetros
+BUS_TYPE = {self.bus_type}
+DATA_WIDTH = {self.data_width}
+ADDR_WIDTH = {self.addr_width}
+
+# Diretórios
+BUILD_DIR = build/rtl
+SRC_DIR = src/rtl/apb
+
+# Arquivos
+RTL_FILES = $(BUILD_DIR)/{self.bus_type}_csr_top.sv \\
+           $(BUILD_DIR)/apb4_interface.sv \\
+           $(BUILD_DIR)/apb4_template.sv
+
+# Comandos
+VLOG = vlog
+VSIM = vsim
+
+# Alvos
+all: compile
+
+compile: $(RTL_FILES)
+\t$(VLOG) +define+DATA_WIDTH=$(DATA_WIDTH) +define+ADDR_WIDTH=$(ADDR_WIDTH) $(RTL_FILES)
+
+clean:
+\trm -rf work/
+\trm -f transcript vsim.wlf
+
+.PHONY: all compile clean
+'''
+        
+        makefile_path = self.build_dir / "Makefile"
+        with open(makefile_path, 'w', encoding='utf-8') as f:
+            f.write(makefile_content)
+        
+        print(f"✓ Makefile gerado: {makefile_path}")
     
-    # Extrai informações da lógica
-    register_decode_struct = extract_register_decode_struct(logic_content)
-    register_decode_logic = extract_register_decode_logic(logic_content)
-    field_storage_declaration = extract_field_storage_declaration(logic_content)
-    register_logic = extract_register_logic(logic_content)
-    readback_assignments = extract_readback_assignments(logic_content)
-    hwif_assignments = generate_hwif_assignments(logic_content)
-    
-    # Determina parâmetros
-    num_registers = count_registers(logic_content)
-    addr_width = max(1, (num_registers - 1).bit_length()) if num_registers > 0 else 0
-    
-    # Define os placeholders
-    placeholders = {
-        '{{MODULE_NAME}}': 'CSR_IP_Map',
-        '{{PACKAGE_NAME}}': 'CSR_IP_Map_pkg',
-        '{{ADDR_WIDTH}}': str(addr_width),
-        '{{DATA_WIDTH}}': '32',  # Assumindo 32 bits baseado na lógica
-        '{{NUM_REGISTERS}}': str(num_registers),
-        '{{MIN_ADDR_WIDTH_PARAM}}': 'CSR_IP_MAP_MIN_ADDR_WIDTH',
-        '{{DATA_WIDTH_PARAM}}': 'CSR_IP_MAP_DATA_WIDTH',
-        '{{REGISTER_DECODE_STRUCT}}': register_decode_struct,
-        '{{REGISTER_DECODE_LOGIC}}': register_decode_logic,
-        '{{FIELD_STORAGE_DECLARATION}}': field_storage_declaration,
-        '{{REGISTER_LOGIC}}': register_logic,
-        '{{HWIF_ASSIGNMENTS}}': hwif_assignments,
-        '{{READBACK_ASSIGNMENTS}}': readback_assignments
-    }
-    
-    # Substitui os placeholders no template
-    generated_content = template_content
-    for placeholder, value in placeholders.items():
-        generated_content = generated_content.replace(placeholder, value)
-    
-    # Cria o diretório de saída se não existir
-    output_path = Path(output_file_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Escreve o arquivo gerado
-    try:
-        with open(output_file_path, 'w', encoding='utf-8') as f:
-            f.write(generated_content)
-        print(f"Arquivo APB4 CSR gerado com sucesso: {output_file_path}")
-        return True
-    except Exception as e:
-        print(f"Erro ao escrever arquivo {output_file_path}: {e}")
-        return False
+    def generate_all(self):
+        """Executa todo o processo de geração"""
+        print(f"🚀 Iniciando geração de RTL para {self.bus_type.upper()}")
+        print(f"   DATA_WIDTH: {self.data_width}")
+        print(f"   ADDR_WIDTH: {self.addr_width}")
+        print("-" * 50)
+        
+        try:
+            # 1. Criar diretórios
+            self.create_directories()
+            
+            # 2. Copiar arquivos fonte
+            self.copy_source_files()
+            
+            # 3. Gerar arquivo RTL
+            rtl_file = self.write_rtl_file()
+            
+            # 4. Gerar Makefile
+            self.generate_makefile()
+            
+            print("-" * 50)
+            print("✅ Geração concluída com sucesso!")
+            print(f"📁 Arquivos gerados em: {self.build_dir}")
+            print(f"📄 Arquivo principal: {rtl_file.name}")
+            
+        except Exception as e:
+            print(f"❌ Erro durante a geração: {str(e)}")
+            raise
 
 def main():
-    """Função principal"""
-    # Define os caminhos dos arquivos
-    logic_file = "build/rtl/CSR_IP_Map_logic.sv"
-    template_file = "src/apb4_template.sv"
-    output_file = "build/rtl/apb4_csr.sv"
+    parser = argparse.ArgumentParser(
+        description='Gerador de RTL para módulo CSR com interface de barramento'
+    )
     
-    # Verifica se os arquivos existem
-    if not os.path.exists(logic_file):
-        print(f"Erro: Arquivo de lógica não encontrado: {logic_file}")
-        return False
+    parser.add_argument(
+        '--bus', 
+        choices=['apb4', 'axi4'], 
+        default='apb4',
+        help='Tipo de barramento (default: apb4)'
+    )
     
-    if not os.path.exists(template_file):
-        print(f"Erro: Arquivo de template não encontrado: {template_file}")
-        return False
+    parser.add_argument(
+        '--data-width', 
+        type=int, 
+        default=32,
+        help='Largura dos dados em bits (default: 32)'
+    )
     
-    # Gera o arquivo APB4 CSR
-    success = generate_apb4_csr(logic_file, template_file, output_file)
+    parser.add_argument(
+        '--addr-width', 
+        type=int, 
+        default=8,
+        help='Largura do endereço em bits (default: 8)'
+    )
     
-    if success:
-        print("Geração concluída com sucesso!")
-        print(f"Verifique o arquivo gerado em: {output_file}")
-    else:
-        print("Falha na geração do arquivo.")
+    parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Modo verboso'
+    )
     
-    return success
+    args = parser.parse_args()
+    
+    # Validações
+    if args.data_width < 8 or args.data_width > 1024:
+        print("❌ Erro: DATA_WIDTH deve estar entre 8 e 1024 bits")
+        return 1
+    
+    if args.addr_width < 3 or args.addr_width > 32:
+        print("❌ Erro: ADDR_WIDTH deve estar entre 3 e 32 bits")
+        return 1
+    
+    # Criar gerador e executar
+    generator = APB4RTLGenerator(
+        bus_type=args.bus,
+        data_width=args.data_width,
+        addr_width=args.addr_width
+    )
+    
+    try:
+        generator.generate_all()
+        return 0
+    except Exception as e:
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        print(f"❌ Falha na geração: {str(e)}")
+        return 1
 
 if __name__ == "__main__":
-    main()
+    exit(main())
