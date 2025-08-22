@@ -277,17 +277,7 @@ def generate_module(ipxact_data, output_dir):
             
             # Declaração do módulo
             f.write(f"module {component_name} (\n")
-            f.write("    input wire clk,\n")
-            f.write("    input wire rst,\n\n")
-            
-            f.write("    input wire i_req_enable,\n")
-            f.write("    input wire i_write_enable,\n")
-            f.write(f"    input wire [{addr_width}:0] i_addr,\n")
-            f.write(f"    input wire [{data_width}:0] i_wdata,\n")
-            f.write(f"    input wire [{data_width}:0] i_wdata_biten,\n")
-            f.write("    output logic o_pready,\n")
-            f.write(f"    output logic [{data_width}:0] o_rdata,\n")
-            f.write("    output logic o_err,\n\n")
+            f.write("     bus_interface intf,\n\n")
             
             # Interfaces HW se existirem campos que precisam
             hw_input_regs = [r for r, info in registers.items() 
@@ -306,10 +296,10 @@ def generate_module(ipxact_data, output_dir):
             f.write(f"    logic [{addr_width}:0] cpuif_addr;\n\n")
             
             # Mapeamento de sinais
-            f.write("    assign cpuif_addr = i_addr;\n")
-            f.write("    assign o_pready = cpuif_rd_ack | cpuif_wr_ack;\n")
-            f.write("    assign o_rdata = cpuif_rd_data;\n")
-            f.write("    assign o_err = cpuif_rd_err | cpuif_wr_err;\n\n")
+            f.write("    assign cpuif_addr = intf.bus_addr;\n")
+            f.write("    assign intf.bus_ready = cpuif_rd_ack | cpuif_wr_ack;\n")
+            f.write("    assign intf.bus_rd_data = cpuif_rd_data;\n")
+            f.write("    assign intf.bus_err = cpuif_rd_err | cpuif_wr_err;\n\n")
             
             # Struct para decodificação de registradores
             f.write("    typedef struct {\n")
@@ -334,10 +324,10 @@ def generate_module(ipxact_data, output_dir):
             f.write("    end\n\n")
             
             # Sinais de controle
-            f.write("    assign decoded_req = i_req_enable;\n")
-            f.write("    assign decoded_req_is_wr = i_write_enable;\n")
-            f.write("    assign decoded_wr_data = i_wdata;\n")
-            f.write(f"    assign decoded_wr_biten = i_wdata_biten;\n\n")
+            f.write("    assign decoded_req = intf.bus_req;\n")
+            f.write("    assign decoded_req_is_wr = intf.bus_req_is_wr;\n")
+            f.write("    assign decoded_wr_data = intf.bus_wr_data;\n")
+            f.write(f"    assign decoded_wr_biten = intf.bus_wr_biten;\n\n")
             
             # Estruturas de combinacional e storage
             f.write("    //--------------------------------------------------------------------------\n")
@@ -432,9 +422,9 @@ def generate_module(ipxact_data, output_dir):
                     f.write("    end\n")
                     
                     # Lógica sequencial
-                    f.write("    always_ff @(posedge clk) begin\n")
+                    f.write("    always_ff @(posedge intf.clk) begin\n")
                     if field_info['access'] != 'write-only':
-                        f.write("        if(rst) begin\n")
+                        f.write("        if(intf.rst) begin\n")
                         if field_info['enum']:
                             f.write(f"            field_storage.{reg_name}.{field_name}.value <= {field_info['enum']}'({format_reset_value(field_info['reset_value'], field_info['bit_width'])});\n")
                         else:

@@ -2,27 +2,8 @@ module apb4_slave #(
     parameter ADDR_WIDTH = 3,
     parameter DATA_WIDTH = 32
 )(
-    input wire clk,
-    input wire rst,
+    bus_interface intf
     input apb4_intf.slave s_apb,
-
-    // BUS Interface inputs
-    input  logic                    i_bus_rd_ack,
-    input  logic                    i_bus_rd_err,
-    input  logic [DATA_WIDTH-1:0]   i_bus_rd_data,
-    input  logic                    i_bus_wr_ack,
-    input  logic                    i_bus_wr_err,
-
-    // BUS Interface outputs
-    output logic                    o_bus_req,
-    output logic                    o_bus_req_is_wr,
-    output logic [ADDR_WIDTH-1:0]   o_bus_addr,
-    output logic [DATA_WIDTH-1:0]   o_bus_wr_data,
-    output logic [DATA_WIDTH-1:0]   o_bus_wr_biten,
-    output logic                    o_bus_req_stall_wr,
-    output logic                    o_bus_req_stall_rd
-
-    
 );
 
     //--------------------------------------------------------------------------
@@ -30,6 +11,20 @@ module apb4_slave #(
     //--------------------------------------------------------------------------
     logic is_active;
     logic psel_prev;
+    logic bus_wr_ack;
+    logic bus_rd_ack;
+    logic bus_wr_err;
+    logic bus_rd_err;
+
+    //--------------------------------------------------------------------------
+    // Write Response Assignment
+    //--------------------------------------------------------------------------
+    // Para writes, assumimos que sempre são completados imediatamente
+    assign bus_wr_ack = intf.bus_req & intf.bus_req_is_wr & intf.bus_ready;
+    assign bus_rd_ack = intf.bus_req & !intf.bus_req_is_wr & intf.bus_ready;
+
+    assign bus_wr_err = intf.bus_req & intf.bus_req_is_wr & intf.bus_err;
+    assign bus_rd_err = intf.bus_req & !intf.bus_req_is_wr & intf.bus_err;
 
     //--------------------------------------------------------------------------
     // APB4 Request Detection
@@ -38,11 +33,11 @@ module apb4_slave #(
         if (rst) begin
             is_active        <= 1'b0;
             psel_prev        <= 1'b0;
-            o_bus_req        <= 1'b0;
-            o_bus_req_is_wr  <= 1'b0;
-            o_bus_addr       <= '0;
-            o_bus_wr_data    <= '0;
-            o_bus_wr_biten   <= '0;
+            intf.bus_req        <= 1'b0;
+            intf.bus_req_is_wr  <= 1'b0;
+            intf.bus_addr       <= '0;
+            intf.bus_wr_data    <= '0;
+            intf.bus_wr_biten   <= '0;
         end else begin
             // Store previous psel for edge detection
             psel_prev <= s_apb.psel;
@@ -51,20 +46,20 @@ module apb4_slave #(
                 // Detect rising edge of psel to start new transaction
                 if (s_apb.psel && !psel_prev) begin
                     is_active           <= 1'b1;
-                    o_bus_req           <= 1'b1;
-                    o_bus_req_is_wr     <= s_apb.pwrite;
-                    o_bus_addr          <= s_apb.paddr[ADDR_WIDTH-1:0];
-                    o_bus_wr_data       <= s_apb.pwdata;
-                    o_bus_wr_biten      <= s_apb.pstrb;
+                    intf.bus_req           <= 1'b1;
+                    intf.bus_req_is_wr     <= s_apb.pwrite;
+                    intf.bus_addr          <= s_apb.paddr[ADDR_WIDTH-1:0];
+                    intf.bus_wr_data       <= s_apb.pwdata;
+                    intf.bus_wr_biten      <= s_apb.pstrb;
                 end else begin
-                    o_bus_req <= 1'b0;
+                    intf.bus_req <= 1'b0;
                 end
             end else begin
                 // Clear request after one cycle
-                o_bus_req <= 1'b0;
+                intf.bus_req <= 1'b0;
                 
                 // End transaction when response is received
-                if (i_bus_rd_ack || i_bus_wr_ack) begin
+                if (bus_rd_ack || bus_wr_ack) begin
                     is_active <= 1'b0;
                 end
             end
@@ -74,14 +69,14 @@ module apb4_slave #(
     //--------------------------------------------------------------------------
     // APB4 Response Signals
     //--------------------------------------------------------------------------
-    assign s_apb.pready  = i_bus_rd_ack | i_bus_wr_ack;
-    assign s_apb.prdata  = i_bus_rd_data;
-    assign s_apb.pslverr = i_bus_rd_err | i_bus_wr_err;
+    assign s_apb.pready  = bus_rd_ack | bus_wr_ack;
+    assign s_apb.prdata  = intf.bus_rd_data;
+    assign s_apb.pslverr = bus_rd_err | bus_wr_err;
 
     //--------------------------------------------------------------------------
     // Stall signals (not used in this implementation)
     //--------------------------------------------------------------------------
-    assign o_bus_req_stall_wr = 1'b0;
-    assign o_bus_req_stall_rd = 1'b0;
+    assign intf.bus_req_stall_wr = 1'b0;
+    assign intf.bus_req_stall_rd = 1'b0;
 
 endmodule
