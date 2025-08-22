@@ -1,2 +1,5 @@
 build/*
-build/rtl_out/*
+build/csv/*
+build/ipxact/*
+build/rtl/*
+!.gitkeep
