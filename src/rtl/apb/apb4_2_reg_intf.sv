@@ -54,8 +54,6 @@ interface Bus2Reg_intf
        input  bus_addr,
        input  bus_wr_data,
        input  bus_wr_biten,
-       input  bus_req_stall_wr, //novos
-       input  bus_req_stall_rd, //novos
        output bus_ready,
        output bus_rd_data,
        output bus_err
