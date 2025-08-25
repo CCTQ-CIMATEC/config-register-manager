@@ -2,8 +2,8 @@ module apb4_slave #(
     parameter ADDR_WIDTH = 3,
     parameter DATA_WIDTH = 32
 )(
-    bus_interface intf
-    input apb4_intf.slave s_apb4,
+    bus_interface intf,
+    input apb4_intf.slave s_apb4
 );
 
     //--------------------------------------------------------------------------

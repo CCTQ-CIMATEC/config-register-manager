@@ -12,6 +12,24 @@ error_exit() {
     exit 1
 }
 
+# Função para limpar o diretório build
+clean_build() {
+    echo "🧹 Limpando diretório build..."
+    if [ -d "${BUILD_DIR}" ]; then
+        rm -rf "${BUILD_DIR}"/*
+        echo "✅ Diretório build limpo"
+    else
+        echo "ℹ️  Diretório build não existe, nada para limpar"
+    fi
+}
+
+# Verificar se a flag -c foi passada
+if [[ "$#" -gt 0 ]] && [[ "$1" == "-c" ]]; then
+    clean_build
+    echo "✅ Limpeza concluída com sucesso!"
+fi
+
+
 echo "Etapa 0: Verificando/Criando estrutura de diretórios..."
 # Criar diretório build principal se não existir
 mkdir -p "${BUILD_DIR}"
@@ -48,5 +66,10 @@ echo "Etapa 4: Gerando conexão com barramento para o RegMap (BUS_WIDTH=${BUS_WI
 if ! python3 scripts/gen_bus_csr.py --bus "${BUS_PROTOCOL}" --data-width "${BUS_WIDTH}" --addr-width "${ADDR_WIDTH}"; then
     error_exit "CSV para IP-XACT"
 fi
+
+echo "Etapa 5: Integração com vivado"
+
+source /opt/Xilinx/Vitis/2024.1/settings64.sh
+./scripts/xrun.sh -top ${BUS_PROTOCOL} -vivado "--R"
 
 echo "✅ Pipeline concluído com sucesso!"
