@@ -18,7 +18,7 @@ Each IP must have two main tables:
 
 **Rules:**
 
-**- Each table must have a unique label, following the pattern `IP-{NAME}`.**
+- **Each table must have a unique label, following the pattern `IP-{NAME}`.**
 - Each row represents a different IP.
 - The **REF** column must contain the label of the corresponding IP register table.
 - Always use a consistent format for addresses, e.g., `0x4000_0000`.
