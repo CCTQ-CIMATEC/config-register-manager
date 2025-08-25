@@ -23,7 +23,19 @@ class APB4RTLGenerator:
     
     def copy_source_files(self):
         """Copia os arquivos necessários do diretório src para build"""
-        source_files = [
+        source_files = []
+        if self.bus_type == "apb4":
+            source_files = [
+            "apb4_interface.sv",
+            "apb4_template.sv"
+        ]
+        elif self.bus_type == "axi4":
+            source_files = [
+            "apb4_interface.sv",
+            "apb4_template.sv"
+        ]
+        else:
+            source_files = [
             "apb4_interface.sv",
             "apb4_template.sv"
         ]
@@ -130,10 +142,7 @@ module {self.bus_type}_csr_top #(
     //--------------------------------------------------------------------------
     // CSR_IP_Map Instance
     //--------------------------------------------------------------------------
-    CSR_IP_Map #(
-        .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(CSR_ADDR_WIDTH)
-    ) u_csr_ip_map (
+    CSR_IP_Map u_csr_ip_map (
         .clk(clk),
         .rst(rst),
         
@@ -175,49 +184,7 @@ endmodule
         
         print(f"✓ Arquivo RTL gerado: {output_file}")
         return output_file
-    
-    def generate_makefile(self):
-        """Gera um Makefile básico para compilação"""
-        makefile_content = f'''# Makefile para compilação do {self.bus_type.upper()} CSR Top
-# Gerado automaticamente
-
-# Parâmetros
-BUS_TYPE = {self.bus_type}
-DATA_WIDTH = {self.data_width}
-ADDR_WIDTH = {self.addr_width}
-
-# Diretórios
-BUILD_DIR = build/rtl
-SRC_DIR = src/rtl/apb
-
-# Arquivos
-RTL_FILES = $(BUILD_DIR)/{self.bus_type}_csr_top.sv \\
-           $(BUILD_DIR)/apb4_interface.sv \\
-           $(BUILD_DIR)/apb4_template.sv
-
-# Comandos
-VLOG = vlog
-VSIM = vsim
-
-# Alvos
-all: compile
-
-compile: $(RTL_FILES)
-\t$(VLOG) +define+DATA_WIDTH=$(DATA_WIDTH) +define+ADDR_WIDTH=$(ADDR_WIDTH) $(RTL_FILES)
-
-clean:
-\trm -rf work/
-\trm -f transcript vsim.wlf
-
-.PHONY: all compile clean
-'''
-        
-        makefile_path = self.build_dir / "Makefile"
-        with open(makefile_path, 'w', encoding='utf-8') as f:
-            f.write(makefile_content)
-        
-        print(f"✓ Makefile gerado: {makefile_path}")
-    
+       
     def generate_all(self):
         """Executa todo o processo de geração"""
         print(f"🚀 Iniciando geração de RTL para {self.bus_type.upper()}")
@@ -234,9 +201,6 @@ clean:
             
             # 3. Gerar arquivo RTL
             rtl_file = self.write_rtl_file()
-            
-            # 4. Gerar Makefile
-            self.generate_makefile()
             
             print("-" * 50)
             print("✅ Geração concluída com sucesso!")
