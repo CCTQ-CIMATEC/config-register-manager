@@ -3,7 +3,7 @@ module apb4_slave #(
     parameter DATA_WIDTH = 32
 )(
     bus_interface intf,
-    input apb4_intf.slave s_apb4
+    Bus2Master_intf s_apb4
 );
 
     //--------------------------------------------------------------------------
@@ -29,8 +29,8 @@ module apb4_slave #(
     //--------------------------------------------------------------------------
     // APB4 Request Detection
     //--------------------------------------------------------------------------
-    always_ff @(posedge clk or posedge rst) begin
-        if (rst) begin
+    always_ff @(posedge intf.clk or posedge intf.rst) begin
+        if (intf.rst) begin
             is_active        <= 1'b0;
             psel_prev        <= 1'b0;
             intf.bus_req        <= 1'b0;

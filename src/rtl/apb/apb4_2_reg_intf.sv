@@ -1,4 +1,4 @@
-interface bus_interface
+interface Bus2Reg_intf
 #(
     parameter DATA_WIDTH = 32,
     parameter ADDR_WIDTH = 11
