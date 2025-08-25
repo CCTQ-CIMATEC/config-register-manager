@@ -1,9 +1,12 @@
-interface bus_interface
+interface Bus2Reg_intf
 #(
     parameter DATA_WIDTH = 32,
     parameter ADDR_WIDTH = 11
 )
-(input logic clk, reset);
+(
+    input logic clk, 
+    input logic rst
+);
 
    //--------------------------------------------------------------------------
     // Signals between APB slave and CSR module
@@ -16,6 +19,8 @@ interface bus_interface
     logic bus_ready;
     logic bus_err;
     logic [DATA_WIDTH-1:0] bus_rd_data;
+    logic bus_req_stall_wr;
+    logic bus_req_stall_rd;
 
   ////////////////////////////////////////////////////////////////////////////
   // modport declaration for bus slave 
@@ -54,7 +59,7 @@ interface bus_interface
         input bus_wr_biten,
         output bus_ready,
         output bus_rd_data,
-        output bus_err,
+        output bus_err
     );
 
 endinterface
