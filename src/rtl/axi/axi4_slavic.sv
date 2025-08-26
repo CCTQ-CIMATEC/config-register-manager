@@ -1,43 +1,10 @@
 module axi4lite_slave #(
-    parameter integer C_S_AXI_DATA_WIDTH = 32,
-    parameter integer C_S_AXI_ADDR_WIDTH = 32
+    parameter integer DATA_WIDTH = 32,
+    parameter integer ADDR_WIDTH = 32
 )(
-    input logic S_AXI_clk,
-    input logic S_AXI_rst_n,
-    
-    // AW Channel
-    input logic [C_S_AXI_ADDR_WIDTH-1:0] S_AXI_AWADDR,
-    input logic [3:0]                    S_AXI_AWCACHE,
-    input logic [2:0]                    S_AXI_AWPROT,
-    input logic                          S_AXI_AWVALID,
-    output logic                         S_AXI_AWREADY,
-    
-    // W Channel
-    input logic [C_S_AXI_DATA_WIDTH-1:0]     S_AXI_WDATA,
-    input logic [(C_S_AXI_DATA_WIDTH/8)-1:0] S_AXI_WSTRB,
-    input logic                               S_AXI_WVALID,
-    output logic                              S_AXI_WREADY,
-    
-    // B Channel
-    output logic [1:0] S_AXI_BRESP,
-    output logic       S_AXI_BVALID,
-    input logic        S_AXI_BREADY,
-    
-    // AR Channel
-    input logic [C_S_AXI_ADDR_WIDTH-1:0] S_AXI_ARADDR,
-    input logic [3:0]                    S_AXI_ARCACHE,
-    input logic [2:0]                    S_AXI_ARPROT,
-    input logic                          S_AXI_ARVALID,
-    output logic                         S_AXI_ARREADY,
-    
-    // R Channel
-    output logic [C_S_AXI_DATA_WIDTH-1:0] S_AXI_RDATA,
-    output logic [1:0]                    S_AXI_RRESP,
-    output logic                          S_AXI_RVALID,
-    input logic                           S_AXI_RREADY,
-    
-    // Bus Interface
-    axi4lite_bus_interface.AXI_SLAVE bus_if
+    input logic clk,
+    input logic rst_n,
+    axi4_lite.slave_ports SAXI;
 );
 
     // AXI4-Lite response types
@@ -62,14 +29,14 @@ module axi4lite_slave #(
     write_state_t write_state;
     read_state_t read_state;
     
-    logic [C_S_AXI_ADDR_WIDTH-1:0] axi_awaddr;
-    logic [C_S_AXI_ADDR_WIDTH-1:0] axi_araddr;
+    logic [ADDR_WIDTH-1:0] axi_awaddr;
+    logic [ADDR_WIDTH-1:0] axi_araddr;
     logic axi_awready;
     logic axi_wready;
     logic axi_bvalid;
     logic [1:0] axi_bresp;
     logic axi_arready;
-    logic [C_S_AXI_DATA_WIDTH-1:0] axi_rdata;
+    logic [DATA_WIDTH-1:0] axi_rdata;
     logic axi_rvalid;
     logic [1:0] axi_rresp;
     
