@@ -1,6 +1,6 @@
 interface Bus2Master_intf #(
-    parameter ADDR_WIDTH = 32,
-    parameter DATA_WIDTH = 32
+    parameter logic ADDR_WIDTH = 32,
+    parameter logic DATA_WIDTH = 32
 ) (
     input logic ACLK,
     input logic ARESETN

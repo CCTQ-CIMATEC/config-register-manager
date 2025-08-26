@@ -1,6 +1,7 @@
 module axilite_slave #(
-    parameter integer DATA_WIDTH = 32,
-    parameter integer ADDR_WIDTH = 32
+    parameter logic DATA_WIDTH = 32,
+    parameter logic ADDR_WIDTH = 32,
+    parameter logic MEM_DEPTH = 32;
 )(
     input logic clk,
     input logic rst_n,
