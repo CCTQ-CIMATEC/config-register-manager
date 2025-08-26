@@ -12,6 +12,24 @@ error_exit() {
     exit 1
 }
 
+# Função para limpar o diretório build
+clean_build() {
+    echo "🧹 Limpando diretório build..."
+    if [ -d "${BUILD_DIR}" ]; then
+        rm -rf "${BUILD_DIR}"/*
+        echo "✅ Diretório build limpo"
+    else
+        echo "ℹ️  Diretório build não existe, nada para limpar"
+    fi
+}
+
+# Verificar se a flag -c foi passada
+if [[ "$#" -gt 0 ]] && [[ "$1" == "-c" ]]; then
+    clean_build
+    echo "✅ Limpeza concluída com sucesso!"
+fi
+
+
 echo "Etapa 0: Verificando/Criando estrutura de diretórios..."
 # Criar diretório build principal se não existir
 mkdir -p "${BUILD_DIR}"
@@ -45,8 +63,18 @@ if ! scripts/ipxact2rtl.sh; then
 fi
 
 echo "Etapa 4: Gerando conexão com barramento para o RegMap (BUS_WIDTH=${BUS_WIDTH}, ADDR_WIDTH=${ADDR_WIDTH}, BUS_PROTOCOL=${BUS_PROTOCOL})..."
-if ! python scripts/gen_bus_csr.py --bus "${BUS_PROTOCOL}" --data-width "${BUS_WIDTH}" --addr-width "${ADDR_WIDTH}"; then
-    error_exit "CSV para IP-XACT"
+if ! python3 scripts/gen_bus_csr.py --bus "${BUS_PROTOCOL}" --data-width "${BUS_WIDTH}" --addr-width "${ADDR_WIDTH}"; then
+    error_exit "Generate bus logic"
 fi
+
+echo "Etapa 4.5: Atualizando srclist com testbench"
+if ! python3 scripts/teste_do_zeze.py -p ${BUS_PROTOCOL}; then
+    error_exit "add testbench"
+fi
+
+echo "Etapa 5: Integração com vivado"
+
+source /opt/Xilinx/Vitis/2024.1/settings64.sh
+./scripts/xrun.sh -top ${BUS_PROTOCOL}_tb -vivado "--R"
 
 echo "✅ Pipeline concluído com sucesso!"

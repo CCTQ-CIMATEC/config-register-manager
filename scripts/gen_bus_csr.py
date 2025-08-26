@@ -15,6 +15,10 @@ class APB4RTLGenerator:
         self.addr_width = addr_width
         self.build_dir = Path("build/rtl")
         self.src_dir = Path("src/rtl/apb")
+        self.source_files = [
+            "CSR_IP_Map_pkg.sv",
+            "CSR_IP_Map.sv"
+        ]
         
     def create_directories(self):
         """Cria o diretório build/rtl se não existir"""
@@ -23,8 +27,23 @@ class APB4RTLGenerator:
     
     def copy_source_files(self):
         """Copia os arquivos necessários do diretório src para build"""
-        source_files = [
-            "apb4_interface.sv",
+        source_files = []
+        if self.bus_type == "apb4":
+            source_files = [
+            "apb4_2_reg_intf.sv",
+            "apb4_2_master_intf.sv",
+            "apb4_template.sv"
+        ]
+        elif self.bus_type == "axi4":
+            source_files = [
+            "apb4_2_reg_intf.sv", #alterar depois
+            "apb4_2_master_intf.sv",
+            "apb4_template.sv"
+        ]
+        else:
+            source_files = [
+            "apb4_2_reg_intf.sv",
+            "apb4_2_master_intf.sv",
             "apb4_template.sv"
         ]
         
@@ -37,20 +56,19 @@ class APB4RTLGenerator:
                 print(f"✓ Arquivo {file_name} copiado para {self.build_dir}")
             else:
                 print(f"⚠ Arquivo {src_file} não encontrado")
+            self.source_files.append(file_name)
     
     def generate_bus_interface_params(self):
         """Gera os parâmetros específicos do barramento"""
         if self.bus_type == "apb4":
             return {
                 "bus_interface_name": "apb4_intf",
-                "slave_interface": "apb4_intf.slave",
                 "bus_connection": "apb4_intf.BUS",
                 "reg_map_connection": "apb4_intf.REG_MAP"
             }
         elif self.bus_type == "axi4":
             return {
                 "bus_interface_name": "axi4_intf",
-                "slave_interface": "axi4_intf.slave",
                 "bus_connection": "axi4_intf.BUS",
                 "reg_map_connection": "axi4_intf.REG_MAP"
             }
@@ -58,7 +76,6 @@ class APB4RTLGenerator:
             # Default para APB4
             return {
                 "bus_interface_name": "apb4_intf",
-                "slave_interface": "apb4_intf.slave",
                 "bus_connection": "apb4_intf.BUS",
                 "reg_map_connection": "apb4_intf.REG_MAP"
             }
@@ -85,7 +102,7 @@ module {self.bus_type}_csr_top #(
     input wire rst,
     
     // {self.bus_type.upper()} Interface
-    {bus_params['slave_interface']} s_{self.bus_type},
+    Bus2Master_intf s_{self.bus_type},
     
     // Hardware Interface
     input  CSR_IP_Map__in_t  hwif_in,
@@ -130,10 +147,7 @@ module {self.bus_type}_csr_top #(
     //--------------------------------------------------------------------------
     // CSR_IP_Map Instance
     //--------------------------------------------------------------------------
-    CSR_IP_Map #(
-        .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(CSR_ADDR_WIDTH)
-    ) u_csr_ip_map (
+    CSR_IP_Map u_csr_ip_map (
         .clk(clk),
         .rst(rst),
         
@@ -168,56 +182,27 @@ endmodule
     def write_rtl_file(self):
         """Escreve o arquivo RTL gerado"""
         rtl_content = self.generate_rtl_content()
-        output_file = self.build_dir / f"{self.bus_type}_csr_top.sv"
+        file_name = f"{self.bus_type}_csr_top.sv"
+        output_file = self.build_dir / file_name
         
+        self.source_files.append(file_name)
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(rtl_content)
         
         print(f"✓ Arquivo RTL gerado: {output_file}")
         return output_file
     
-    def generate_makefile(self):
-        """Gera um Makefile básico para compilação"""
-        makefile_content = f'''# Makefile para compilação do {self.bus_type.upper()} CSR Top
-# Gerado automaticamente
+    def write_srclist_file(self):
+        """Escreve o arquivo srclist gerado"""
+        output_file = self.build_dir / f"{self.bus_type}_tb.srclist"
 
-# Parâmetros
-BUS_TYPE = {self.bus_type}
-DATA_WIDTH = {self.data_width}
-ADDR_WIDTH = {self.addr_width}
-
-# Diretórios
-BUILD_DIR = build/rtl
-SRC_DIR = src/rtl/apb
-
-# Arquivos
-RTL_FILES = $(BUILD_DIR)/{self.bus_type}_csr_top.sv \\
-           $(BUILD_DIR)/apb4_interface.sv \\
-           $(BUILD_DIR)/apb4_template.sv
-
-# Comandos
-VLOG = vlog
-VSIM = vsim
-
-# Alvos
-all: compile
-
-compile: $(RTL_FILES)
-\t$(VLOG) +define+DATA_WIDTH=$(DATA_WIDTH) +define+ADDR_WIDTH=$(ADDR_WIDTH) $(RTL_FILES)
-
-clean:
-\trm -rf work/
-\trm -f transcript vsim.wlf
-
-.PHONY: all compile clean
-'''
+        with open(output_file, 'w', encoding='utf-8') as f:
+            for file_name in self.source_files:
+                f.write(file_name + '\n')
         
-        makefile_path = self.build_dir / "Makefile"
-        with open(makefile_path, 'w', encoding='utf-8') as f:
-            f.write(makefile_content)
-        
-        print(f"✓ Makefile gerado: {makefile_path}")
-    
+        print(f"✓ Arquivo srclist gerado: {output_file}")
+        return output_file
+       
     def generate_all(self):
         """Executa todo o processo de geração"""
         print(f"🚀 Iniciando geração de RTL para {self.bus_type.upper()}")
@@ -234,9 +219,9 @@ clean:
             
             # 3. Gerar arquivo RTL
             rtl_file = self.write_rtl_file()
-            
-            # 4. Gerar Makefile
-            self.generate_makefile()
+
+            #4. Gerar srclist
+            self.write_srclist_file()
             
             print("-" * 50)
             print("✅ Geração concluída com sucesso!")
