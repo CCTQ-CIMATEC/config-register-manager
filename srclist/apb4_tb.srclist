@@ -1,0 +1,4 @@
+src/rtl/apb/apb4_2_master_intf.sv
+src/rtl/apb/apb4_2_reg_intf.sv
+src/rtl/apb/apb4_template.sv
+build/rtl/apb4_at.srclist

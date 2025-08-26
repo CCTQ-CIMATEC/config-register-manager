@@ -67,10 +67,10 @@ if ! python3 scripts/gen_bus_csr.py --bus "${BUS_PROTOCOL}" --data-width "${BUS_
     error_exit "Generate bus logic"
 fi
 
-echo "Etapa 4.5: Atualizando srclist com testbench"
-if ! python3 scripts/teste_do_zeze.py -p ${BUS_PROTOCOL}; then
-    error_exit "add testbench"
-fi
+# echo "Etapa 4.5: Atualizando srclist com testbench"
+# if ! python3 scripts/teste_do_zeze.py -p ${BUS_PROTOCOL}; then
+#     error_exit "add testbench"
+# fi
 
 echo "Etapa 5: Integração com vivado"
 

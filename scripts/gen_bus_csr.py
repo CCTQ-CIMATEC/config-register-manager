@@ -56,7 +56,6 @@ class APB4RTLGenerator:
                 print(f"✓ Arquivo {file_name} copiado para {self.build_dir}")
             else:
                 print(f"⚠ Arquivo {src_file} não encontrado")
-            self.source_files.append(file_name)
     
     def generate_bus_interface_params(self):
         """Gera os parâmetros específicos do barramento"""
@@ -194,7 +193,7 @@ endmodule
     
     def write_srclist_file(self):
         """Escreve o arquivo srclist gerado"""
-        output_file = self.build_dir / f"{self.bus_type}_tb.srclist"
+        output_file = self.build_dir / f"{self.bus_type}_at.srclist"
 
         with open(output_file, 'w', encoding='utf-8') as f:
             for file_name in self.source_files:
