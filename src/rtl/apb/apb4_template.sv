@@ -22,22 +22,22 @@ module apb4_slave #(
     always_comb begin
         case (current_state)
             IDLE: begin
-                if (s_apb.psel && !s_apb.penable)
+                if (s_apb4.psel && !s_apb4.penable)
                     next_state = SETUP;
                 else
                     next_state = IDLE;
             end
             SETUP: begin
-                if (s_apb.psel && s_apb.penable)
+                if (s_apb4.psel && s_apb4.penable)
                     next_state = ACCESS;
-                else if (!s_apb.psel)
+                else if (!s_apb4.psel)
                     next_state = IDLE;
                 else
                     next_state = SETUP;
             end
             ACCESS: begin
                 if (transaction_complete) begin
-                    if (s_apb.psel && !s_apb.penable)
+                    if (s_apb4.psel && !s_apb4.penable)
                         next_state = SETUP;
                     else
                         next_state = IDLE;
@@ -88,9 +88,9 @@ module apb4_slave #(
     //--------------------------------------------------------------------------
     // APB Response Signals
     //--------------------------------------------------------------------------
-    assign s_apb.pready  = (current_state == ACCESS) ? transaction_complete : 1'b0;
-    assign s_apb.prdata  = (current_state == ACCESS) ? intf.bus_rd_data : '0;
-    assign s_apb.pslverr = (current_state == ACCESS) ? intf.bus_err : 1'b0;
+    assign s_apb4.pready  = (current_state == ACCESS) ? transaction_complete : 1'b0;
+    assign s_apb4.prdata  = (current_state == ACCESS) ? intf.bus_rd_data : '0;
+    assign s_apb4.pslverr = (current_state == ACCESS) ? intf.bus_err : 1'b0;
 
     //--------------------------------------------------------------------------
     // Stall signals
