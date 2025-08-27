@@ -73,7 +73,6 @@ module apb4_slave #(
     assign s_apb4.prdata  = intf.bus_rd_data;
     assign s_apb4.pslverr = bus_rd_err | bus_wr_err;
 
-
     //--------------------------------------------------------------------------
     // Stall signals (not used in this implementation)
     //--------------------------------------------------------------------------
