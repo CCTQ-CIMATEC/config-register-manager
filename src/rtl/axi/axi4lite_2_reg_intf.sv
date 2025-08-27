@@ -1,7 +1,6 @@
 interface axi_lite #(
     parameter DATA_WIDTH = 31,
-    parameter ADDR_WIDTH = 31,
-    parameter 
+    parameter ADDR_WIDTH = 31
 ) (
     input logic ACLK,
     input logic ARESETN

@@ -3,8 +3,27 @@ set -euo pipefail
 
 BUS_WIDTH=32
 ADDR_WIDTH=3
-BUS_PROTOCOL=apb4
+BUS_PROTOCOL="apb4"
 BUILD_DIR="build"
+CLEAN_FLAG=false
+
+# Função para exibir ajuda
+show_help() {
+    echo "Uso: $0 [OPÇÕES]"
+    echo ""
+    echo "Opções:"
+    echo "  -c              Limpar diretório build antes de executar"
+    echo "  -b WIDTH        Largura do barramento (padrão: 32)"
+    echo "  -a WIDTH        Largura do endereço (padrão: 3)"
+    echo "  -p PROTOCOL     Protocolo do barramento (padrão: axi4lite)"
+    echo "  -d DIR          Diretório de build (padrão: build)"
+    echo "  -h              Mostrar esta ajuda"
+    echo ""
+    echo "Exemplos:"
+    echo "  $0 -c -b 64 -a 4 -p axi4"
+    echo "  $0 -b 32 -a 3"
+    echo "  $0 -c"
+}
 
 # Função para exibir erro e sair
 error_exit() {
@@ -23,12 +42,46 @@ clean_build() {
     fi
 }
 
-# Verificar se a flag -c foi passada
-if [[ "$#" -gt 0 ]] && [[ "$1" == "-c" ]]; then
+# Processar argumentos
+while getopts "cb:a:p:d:h" opt; do
+    case $opt in
+        c)
+            CLEAN_FLAG=true
+            ;;
+        b)
+            BUS_WIDTH="$OPTARG"
+            ;;
+        a)
+            ADDR_WIDTH="$OPTARG"
+            ;;
+        p)
+            BUS_PROTOCOL="$OPTARG"
+            ;;
+        d)
+            BUILD_DIR="$OPTARG"
+            ;;
+        h)
+            show_help
+            exit 0
+            ;;
+        \?)
+            echo "❌ Opção inválida: -$OPTARG" >&2
+            show_help
+            exit 1
+            ;;
+        :)
+            echo "❌ Opção -$OPTARG requer um argumento." >&2
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+# Executar limpeza se a flag -c foi passada
+if [ "$CLEAN_FLAG" = true ]; then
     clean_build
     echo "✅ Limpeza concluída com sucesso!"
 fi
-
 
 echo "Etapa 0: Verificando/Criando estrutura de diretórios..."
 # Criar diretório build principal se não existir
@@ -66,11 +119,6 @@ echo "Etapa 4: Gerando conexão com barramento para o RegMap (BUS_WIDTH=${BUS_WI
 if ! python3 scripts/gen_bus_csr.py --bus "${BUS_PROTOCOL}" --data-width "${BUS_WIDTH}" --addr-width "${ADDR_WIDTH}"; then
     error_exit "Generate bus logic"
 fi
-
-# echo "Etapa 4.5: Atualizando srclist com testbench"
-# if ! python3 scripts/teste_do_zeze.py -p ${BUS_PROTOCOL}; then
-#     error_exit "add testbench"
-# fi
 
 echo "Etapa 5: Integração com vivado"
 
