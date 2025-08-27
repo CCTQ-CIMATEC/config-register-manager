@@ -57,31 +57,52 @@ class APB4RTLGenerator:
             else:
                 print(f"⚠ Arquivo {src_file} não encontrado")
     
-    def generate_bus_interface_params(self):
+    def generate_bus2Reg_interface_params(self):
         """Gera os parâmetros específicos do barramento"""
         if self.bus_type == "apb4":
             return {
-                "bus_interface_name": "apb4_intf",
-                "bus_connection": "apb4_intf.BUS",
-                "reg_map_connection": "apb4_intf.REG_MAP"
+                "bus_interface_name": "apb42Reg_intf",
+                "bus_connection": "apb42Reg_intf.BUS",
+                "reg_map_connection": "apb42Reg_intf.REG_MAP"
+                ""
             }
         elif self.bus_type == "axi4lite":
             return {
-                "bus_interface_name": "axi4lite_intf",
-                "bus_connection": "axi4lite_intf.BUS",
-                "reg_map_connection": "axi4lite_intf.REG_MAP"
+                "bus_interface_name": "axi4lite2Reg_intf",
+                "bus_connection": "axi4lite2Reg_intf.BUS",
+                "reg_map_connection": "axi4lite2Reg_intf.REG_MAP"
             }
         else:
             # Default para APB4
             return {
-                "bus_interface_name": "apb4_intf",
-                "bus_connection": "apb4_intf.BUS",
-                "reg_map_connection": "apb4_intf.REG_MAP"
+                "bus_interface_name": "apb42Reg_intf",
+                "bus_connection": "apb42Reg_intf.BUS",
+                "reg_map_connection": "apb42Reg_intf.REG_MAP"
+            }
+    
+    def generate_bus2Master_interface_params(self):
+        """Gera os parâmetros específicos do barramento"""
+        if self.bus_type == "apb4":
+            return {
+                "bus_interface_name": "apb42Master_intf",
+                "slave_connection": "apb42Master_intf.slave",
+            }
+        elif self.bus_type == "axi4lite":
+            return {
+                "bus_interface_name": "aaxi4lite2Reg_intf",
+                "slave_connection": "aaxi4lite2Reg_intf.BUS",
+            }
+        else:
+            # Default para APB4
+            return {
+                "bus_interface_name": "apb42Master_intf",
+                "slave_connection": "apb42Master_intf.BUS",
             }
     
     def generate_rtl_content(self):
         """Gera o conteúdo do arquivo SystemVerilog"""
-        bus_params = self.generate_bus_interface_params()
+        bus2Reg_params = self.generate_bus2Reg_interface_params()
+        bus2Master_params = self.generate_bus2Master_interface_params()
         
         # Calcula a largura do endereço necessária para o CSR
         csr_addr_width = max(3, (self.addr_width - 2))  # Mínimo 3 bits, remove 2 bits para word alignment
@@ -101,7 +122,7 @@ module {self.bus_type}_csr_top #(
     input wire rst,
     
     // {self.bus_type.upper()} Interface
-    Bus2Master_intf s_{self.bus_type},
+    Bus2Master_intf {bus2Master_params['bus_interface_name']},
     
     // Hardware Interface
     input  CSR_IP_Map__in_t  hwif_in,
@@ -118,10 +139,10 @@ module {self.bus_type}_csr_top #(
     //--------------------------------------------------------------------------
     // Bus Interface Instance
     //--------------------------------------------------------------------------
-    bus_interface #(
-        .P_DATA_WIDTH(P_DATA_WIDTH),
-        .P_DMEM_ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
-    ) {bus_params['bus_interface_name']} (
+    Bus2Reg_intf #(
+        .DATA_WIDTH(P_DATA_WIDTH),
+        .DMEM_ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
+    ) {bus2Reg_params['bus_interface_name']} (
         .clk(clk), 
         .reset(rst)
     );
@@ -133,14 +154,11 @@ module {self.bus_type}_csr_top #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(DATA_WIDTH)
     ) u_{self.bus_type}_slave (
-        .clk(clk),
-        .rst(rst),
-        
         // {self.bus_type.upper()} Interface
-        .s_{self.bus_type}(s_{self.bus_type}),
+        .s_{self.bus_type}({bus2Master_params['slave_connection']}),
         
         // Internal Bus Interface
-        .bus_interface({bus_params['bus_connection']})
+        .intf({bus2Reg_params['bus_connection']})
     );
 
     //--------------------------------------------------------------------------
@@ -151,7 +169,7 @@ module {self.bus_type}_csr_top #(
         .rst(rst),
         
         // Bus Interface
-        .bus_interface({bus_params['reg_map_connection']}),
+        .bus_interface({bus2Reg_params['reg_map_connection']}),
         
         // Hardware Interface
         .hwif_in(hwif_in),

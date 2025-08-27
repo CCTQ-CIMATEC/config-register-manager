@@ -60,51 +60,9 @@ def parse_ipxact(input_xml):
                 
                 fields = {}
                 for field in reg.findall('ipxact:field', NS):
-                    field_name = field.find('ipxact:name', NS).text
-                    bit_offset = int(field.find('ipxact:bitOffset', NS).text)
-                    bit_width = int(field.find('ipxact:bitWidth', NS).text)
-                    access = field.find('ipxact:access', NS).text if field.find('ipxact:access', NS) is not None else 'read-write'
-                    volatile = field.find('ipxact:volatile', NS) is not None and field.find('ipxact:volatile', NS).text.lower() == 'true'
-                    
-                    # Valor de reset
-                    reset_value = "'h0"
-                    resets = field.find('ipxact:resets', NS)
-                    if resets is not None:
-                        reset = resets.find('ipxact:reset', NS)
-                        if reset is not None:
-                            reset_value_elem = reset.find('ipxact:value', NS)
-                            if reset_value_elem is not None:
-                                reset_value = reset_value_elem.text
-                    else:
-                        reset_value_elem = field.find('.//ipxact:value', NS)
-                        if reset_value_elem is not None:
-                            reset_value = reset_value_elem.text
-                    
-                    description = field.find('ipxact:description', NS).text if field.find('ipxact:description', NS) is not None else ""
-                    
-                    # Processa valores enumerados
-                    enum_values = parse_enumerated_values(field)
-                    enum_name = None
-                    if enum_values:
-                        # Cria assinatura única do enum
-                        signature = tuple(sorted(enum_values.items()))
-                        if signature in enum_cache:
-                            enum_name = enum_cache[signature]  # reutiliza enum existente
-                        else:
-                            enum_name = f"{reg_name}_{field_name}_e"
-                            enum_definitions[enum_name] = enum_values
-                            enum_cache[signature] = enum_name
-                    
-                    fields[field_name] = {
-                        'bit_offset': bit_offset,
-                        'bit_width': bit_width,
-                        'access': access,
-                        'volatile': volatile,
-                        'reset_value': reset_value,
-                        'description': description,
-                        'enum': enum_name
-                    }
-                
+                    field_info = parse_field_ipxact(field, NS, reg_name, enum_cache, enum_definitions)
+                    fields[field_info['field_name']] = field_info
+
                 registers[reg_name] = {
                     'offset': offset,
                     'size': size,
@@ -121,6 +79,82 @@ def parse_ipxact(input_xml):
     except Exception as e:
         print(f"Erro inesperado: {type(e).__name__}: {str(e)}", file=sys.stderr)
         return None
+
+def parse_field_ipxact(field, NS, reg_name, enum_cache, enum_definitions):
+    """
+    Parse a single <ipxact:field> element into a Python dictionary.
+
+    Parameters
+    ----------
+    field : xml.etree.ElementTree.Element
+        The XML element representing the field.
+    NS : dict
+        Namespace mapping for IP-XACT tags.
+    reg_name : str
+        Name of the parent register (used to generate enum names).
+    enum_cache : dict
+        Cache to reuse enum signatures across fields.
+    enum_definitions : dict
+        Dictionary to store unique enum definitions.
+
+    Returns
+    -------
+    dict
+        Parsed field attributes.
+    """
+    field_name = field.find('ipxact:name', NS).text
+    bit_offset = int(field.find('ipxact:bitOffset', NS).text)
+    bit_width = int(field.find('ipxact:bitWidth', NS).text)
+
+    # Access type (default: read-write)
+    access_elem = field.find('ipxact:access', NS)
+    access = access_elem.text if access_elem is not None else 'read-write'
+
+    # Volatile (default: False)
+    volatile_elem = field.find('ipxact:volatile', NS)
+    volatile = volatile_elem is not None and volatile_elem.text.lower() == 'true'
+
+    # Reset value
+    reset_value = "'h0"
+    resets = field.find('ipxact:resets', NS)
+    if resets is not None:
+        reset = resets.find('ipxact:reset', NS)
+        if reset is not None:
+            reset_value_elem = reset.find('ipxact:value', NS)
+            if reset_value_elem is not None:
+                reset_value = reset_value_elem.text
+    else:
+        reset_value_elem = field.find('.//ipxact:value', NS)
+        if reset_value_elem is not None:
+            reset_value = reset_value_elem.text
+
+    # Description
+    desc_elem = field.find('ipxact:description', NS)
+    description = desc_elem.text if desc_elem is not None else ""
+
+    # Enumerated values
+    enum_values = parse_enumerated_values(field)
+    enum_name = None
+    if enum_values:
+        # Unique signature for enum reuse
+        signature = tuple(sorted(enum_values.items()))
+        if signature in enum_cache:
+            enum_name = enum_cache[signature]
+        else:
+            enum_name = f"{reg_name}_{field_name}_e"
+            enum_definitions[enum_name] = enum_values
+            enum_cache[signature] = enum_name
+
+    return {
+        'field_name': field_name,
+        'bit_offset': bit_offset,
+        'bit_width': bit_width,
+        'access': access,
+        'volatile': volatile,
+        'reset_value': reset_value,
+        'description': description,
+        'enum': enum_name
+    }
 
 def needs_hw_input(field_info):
     """Verifica se o campo precisa de entrada de hardware"""
@@ -164,12 +198,19 @@ def generate_package(ipxact_data, output_dir):
                     # Calcula o número de bits necessário para representar o enum
                     enum_size = max(len(bin(len(enum_values))) - 3, 1)
                     f.write(f"    typedef enum logic [{enum_size}:0] {{\n")
-                    for value, name in enum_values.items():
+                    items = list(enum_values.items())
+                    last_value, _ = items[-1]  # pega o último par (valor, nome)
+ 
+                    for value, name in items:
                         # Remove caracteres inválidos para nomes SystemVerilog
                         clean_name = name.replace('\\', '').replace(' ', '_')
-                        f.write(f"        {clean_name} = {value},\n")
-                    first_key = list(enum_values.keys())[0]
-                    f.write(f"        {enum_name.upper()}_DEFAULT = {first_key}\n")
+ 
+                        print(f"\n\n AQUI {last_value} AQUI \n\n")
+ 
+                        if value != last_value:
+                            f.write(f"        {clean_name} = {value},\n")
+                        else:
+                            f.write(f"        {clean_name} = {value}\n")
                     f.write(f"    }} {enum_name};\n\n")
             
             # Gera typedef structs para entrada (hardware -> registrador)
