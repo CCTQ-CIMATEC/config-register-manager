@@ -204,14 +204,12 @@ def generate_package(ipxact_data, output_dir):
                     for value, name in items:
                         # Remove caracteres inválidos para nomes SystemVerilog
                         clean_name = name.replace('\\', '').replace(' ', '_')
- 
-                        print(f"\n\n AQUI {last_value} AQUI \n\n")
- 
                         if value != last_value:
                             f.write(f"        {clean_name} = {value},\n")
                         else:
                             f.write(f"        {clean_name} = {value}\n")
                     f.write(f"    }} {enum_name};\n\n")
+ 
             
             # Gera typedef structs para entrada (hardware -> registrador)
             f.write("    // Input structures (Hardware -> Register)\n")
@@ -318,7 +316,7 @@ def generate_module(ipxact_data, output_dir):
             
             # Declaração do módulo
             f.write(f"module {component_name} (\n")
-            f.write("     bus_interface intf,\n\n")
+            f.write("     Bus2Reg_intf intf,\n\n")
             
             # Interfaces HW se existirem campos que precisam
             hw_input_regs = [r for r, info in registers.items() 

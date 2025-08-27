@@ -2,12 +2,12 @@
 Gerador de RTL para módulo APB4 CSR Top
 Autor: Script Python para geração automatizada
 """
-
+ 
 import os
 import shutil
 import argparse
 from pathlib import Path
-
+ 
 class APB4RTLGenerator:
     def __init__(self, bus_type="apb4", data_width=32, addr_width=8):
         self.bus_type = bus_type.lower()
@@ -112,7 +112,7 @@ class APB4RTLGenerator:
 // Description: Top-level module for {self.bus_type.upper()} CSR interface
 // Generated automatically by Python script
 //------------------------------------------------------------------------------
-
+ 
 module {self.bus_type}_csr_top #(
     parameter DATA_WIDTH = {self.data_width},
     parameter ADDR_WIDTH = {self.addr_width},
@@ -128,25 +128,25 @@ module {self.bus_type}_csr_top #(
     input  CSR_IP_Map__in_t  hwif_in,
     output CSR_IP_Map__out_t hwif_out
 );
-
+ 
     //--------------------------------------------------------------------------
     // Local Parameters
     //--------------------------------------------------------------------------
     localparam P_DATA_WIDTH = DATA_WIDTH;
     localparam P_DMEM_ADDR_WIDTH = ADDR_WIDTH;
     localparam P_CSR_ADDR_WIDTH = CSR_ADDR_WIDTH;
-
+ 
     //--------------------------------------------------------------------------
     // Bus Interface Instance
     //--------------------------------------------------------------------------
     Bus2Reg_intf #(
         .DATA_WIDTH(P_DATA_WIDTH),
-        .DMEM_ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
+        .ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
     ) {bus2Reg_params['bus_interface_name']} (
-        .clk(clk), 
-        .reset(rst)
+        .clk(clk),
+        .rst(rst)
     );
-
+ 
     //--------------------------------------------------------------------------
     // {self.bus_type.upper()} Slave Instance
     //--------------------------------------------------------------------------
@@ -155,27 +155,24 @@ module {self.bus_type}_csr_top #(
         .DATA_WIDTH(DATA_WIDTH)
     ) u_{self.bus_type}_slave (
         // {self.bus_type.upper()} Interface
-        .s_{self.bus_type}({bus2Master_params['slave_connection']}),
+        .s_{self.bus_type}({bus2Master_params['bus_interface_name']}),
         
         // Internal Bus Interface
         .intf({bus2Reg_params['bus_connection']})
     );
-
+ 
     //--------------------------------------------------------------------------
     // CSR_IP_Map Instance
     //--------------------------------------------------------------------------
     CSR_IP_Map u_csr_ip_map (
-        .clk(clk),
-        .rst(rst),
-        
         // Bus Interface
-        .bus_interface({bus2Reg_params['reg_map_connection']}),
+        .intf({bus2Reg_params['reg_map_connection']}),
         
         // Hardware Interface
         .hwif_in(hwif_in),
         .hwif_out(hwif_out)
     );
-
+ 
     //--------------------------------------------------------------------------
     // Assertions and Coverage (optional)
     //--------------------------------------------------------------------------
@@ -187,9 +184,9 @@ module {self.bus_type}_csr_top #(
         assert (CSR_ADDR_WIDTH >= 3) else $error("CSR_ADDR_WIDTH must be >= 3");
     end
 `endif
-
+ 
 endmodule
-
+ 
 //------------------------------------------------------------------------------
 // End of {self.bus_type}_csr_top
 //------------------------------------------------------------------------------'''
@@ -212,7 +209,7 @@ endmodule
     def write_srclist_file(self):
         """Escreve o arquivo srclist gerado"""
         output_file = self.build_dir / f"{self.bus_type}_at.srclist"
-
+ 
         with open(output_file, 'w', encoding='utf-8') as f:
             for file_name in self.source_files:
                 f.write("${CONFIG_REGISTER_MANAGER}/build/rtl/"+file_name + '\n')
@@ -236,7 +233,7 @@ endmodule
             
             # 3. Gerar arquivo RTL
             rtl_file = self.write_rtl_file()
-
+ 
             #4. Gerar srclist
             self.write_srclist_file()
             
@@ -248,29 +245,29 @@ endmodule
         except Exception as e:
             print(f"❌ Erro durante a geração: {str(e)}")
             raise
-
+ 
 def main():
     parser = argparse.ArgumentParser(
         description='Gerador de RTL para módulo CSR com interface de barramento'
     )
     
     parser.add_argument(
-        '--bus', 
-        choices=['apb4', 'axi4lite'], 
+        '--bus',
+        choices=['apb4', 'axi4lite'],
         default='apb4',
         help='Tipo de barramento (default: apb4)'
     )
     
     parser.add_argument(
-        '--data-width', 
-        type=int, 
+        '--data-width',
+        type=int,
         default=32,
         help='Largura dos dados em bits (default: 32)'
     )
     
     parser.add_argument(
-        '--addr-width', 
-        type=int, 
+        '--addr-width',
+        type=int,
         default=8,
         help='Largura do endereço em bits (default: 8)'
     )
@@ -308,6 +305,7 @@ def main():
             traceback.print_exc()
         print(f"❌ Falha na geração: {str(e)}")
         return 1
-
+ 
 if __name__ == "__main__":
     exit(main())
+ 
