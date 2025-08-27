@@ -164,13 +164,18 @@ def generate_package(ipxact_data, output_dir):
                     # Calcula o número de bits necessário para representar o enum
                     enum_size = max(len(bin(len(enum_values))) - 3, 1)
                     f.write(f"    typedef enum logic [{enum_size}:0] {{\n")
-                    for value, name in enum_values.items():
+                    items = list(enum_values.items())
+                    last_value, _ = items[-1]  # pega o último par (valor, nome)
+ 
+                    for value, name in items:
                         # Remove caracteres inválidos para nomes SystemVerilog
                         clean_name = name.replace('\\', '').replace(' ', '_')
-                        f.write(f"        {clean_name} = {value},\n")
-                    first_key = list(enum_values.keys())[0]
-                    f.write(f"        {enum_name.upper()}_DEFAULT = {first_key}\n")
+                        if value != last_value:
+                            f.write(f"        {clean_name} = {value},\n")
+                        else:
+                            f.write(f"        {clean_name} = {value}\n")
                     f.write(f"    }} {enum_name};\n\n")
+ 
             
             # Gera typedef structs para entrada (hardware -> registrador)
             f.write("    // Input structures (Hardware -> Register)\n")
@@ -277,7 +282,7 @@ def generate_module(ipxact_data, output_dir):
             
             # Declaração do módulo
             f.write(f"module {component_name} (\n")
-            f.write("     bus_interface intf,\n\n")
+            f.write("     Bus2Reg_intf intf,\n\n")
             
             # Interfaces HW se existirem campos que precisam
             hw_input_regs = [r for r, info in registers.items() 

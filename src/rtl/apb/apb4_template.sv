@@ -2,7 +2,7 @@ module apb4_slave #(
     parameter ADDR_WIDTH = 3,
     parameter DATA_WIDTH = 32
 )(
-    bus_interface intf,
+    Bus2Reg_intf intf,
     Bus2Master_intf s_apb4
 );
 
@@ -18,7 +18,8 @@ module apb4_slave #(
     apb_state_t current_state, next_state;
 
     logic transaction_complete;
-
+    logic write_enable;  
+    // lógica de próximo estado
     always_comb begin
         case (current_state)
             IDLE: begin
@@ -54,26 +55,32 @@ module apb4_slave #(
     always_ff @(posedge intf.clk or posedge intf.rst) begin
         if (intf.rst) begin
             current_state <= IDLE;
-        else
+        end else begin
             current_state <= next_state;
+        end
     end
 
+    //--------------------------------------------------------------------------
+    // Lógica Combinacional para Saídas
+    //--------------------------------------------------------------------------
     always_comb begin
-        // defaults
-        intf.o_bus_req        = 1'b0;
-        intf.o_bus_req_is_wr  = 1'b0;
-        intf.o_bus_addr       = '0;
-        intf.o_bus_wr_data    = '0;
-        intf.o_bus_wr_biten   = '0;
+        // valores padrão para evitar latches
+        intf.bus_req        = 1'b0;
+        intf.bus_req_is_wr  = 1'b0;
+        intf.bus_addr       = '0;
+        intf.bus_wr_data    = '0;
+        intf.bus_wr_biten   = '0;
 
-        if (state == ACCESS) begin
-        psel    = 1'b1;
-        penable = 1'b1;
-        pwrite  = write_enable;
-        next_state = IDLE;      // transição
+        // logica baseada no estado atual
+        if (current_state == ACCESS) begin
+            intf.bus_req       = 1'b1;
+            intf.bus_req_is_wr = write_enable; 
+            intf.bus_addr      = s_apb4.paddr;  
+            intf.bus_wr_data   = s_apb4.pwdata;
+            // intf.o_bus_wr_biten pode precisar ser ajustado conforme necessário.
+        end
     end
-    end
-    end
+
     //--------------------------------------------------------------------------
     // Transaction Completion
     //--------------------------------------------------------------------------

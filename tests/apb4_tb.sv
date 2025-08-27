@@ -53,7 +53,7 @@ module apb4_tb;
         .rst(rst),
         
         // APB4 Interface
-        .s_apb4(s_apb4.slave),
+        .apb42Master_intf(s_apb4.slave),
         
         // Hardware Interface
         .hwif_in(hwif_in),
@@ -214,7 +214,7 @@ module apb4_tb;
     //--------------------------------------------------------------------------
     initial begin
         // Initialize signals
-        hwif_in     <= '0;
+        hwif_in <= '{default:0};
         test_passed <= 1;
         
         // Initialize APB4 interface through modport
