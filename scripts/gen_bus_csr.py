@@ -34,7 +34,7 @@ class APB4RTLGenerator:
             "apb4_2_master_intf.sv",
             "apb4_template.sv"
         ]
-        elif self.bus_type == "axi4":
+        elif self.bus_type == "axi4lite":
             source_files = [
             "apb4_2_reg_intf.sv", #alterar depois
             "apb4_2_master_intf.sv",
@@ -56,7 +56,6 @@ class APB4RTLGenerator:
                 print(f"✓ Arquivo {file_name} copiado para {self.build_dir}")
             else:
                 print(f"⚠ Arquivo {src_file} não encontrado")
-            self.source_files.append(file_name)
     
     def generate_bus_interface_params(self):
         """Gera os parâmetros específicos do barramento"""
@@ -66,11 +65,11 @@ class APB4RTLGenerator:
                 "bus_connection": "apb4_intf.BUS",
                 "reg_map_connection": "apb4_intf.REG_MAP"
             }
-        elif self.bus_type == "axi4":
+        elif self.bus_type == "axi4lite":
             return {
-                "bus_interface_name": "axi4_intf",
-                "bus_connection": "axi4_intf.BUS",
-                "reg_map_connection": "axi4_intf.REG_MAP"
+                "bus_interface_name": "axi4lite_intf",
+                "bus_connection": "axi4lite_intf.BUS",
+                "reg_map_connection": "axi4lite_intf.REG_MAP"
             }
         else:
             # Default para APB4
@@ -194,11 +193,11 @@ endmodule
     
     def write_srclist_file(self):
         """Escreve o arquivo srclist gerado"""
-        output_file = self.build_dir / f"{self.bus_type}_tb.srclist"
+        output_file = self.build_dir / f"{self.bus_type}_at.srclist"
 
         with open(output_file, 'w', encoding='utf-8') as f:
             for file_name in self.source_files:
-                f.write(file_name + '\n')
+                f.write("${CONFIG_REGISTER_MANAGER}/build/rtl/"+file_name + '\n')
         
         print(f"✓ Arquivo srclist gerado: {output_file}")
         return output_file
@@ -239,7 +238,7 @@ def main():
     
     parser.add_argument(
         '--bus', 
-        choices=['apb4', 'axi4'], 
+        choices=['apb4', 'axi4lite'], 
         default='apb4',
         help='Tipo de barramento (default: apb4)'
     )

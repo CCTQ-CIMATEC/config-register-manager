@@ -5,7 +5,7 @@
 
 `timescale 1ns/1ps
 
-module apb4_csr_top_tb;
+module apb4_tb;
 
     //--------------------------------------------------------------------------
     // Parameters
