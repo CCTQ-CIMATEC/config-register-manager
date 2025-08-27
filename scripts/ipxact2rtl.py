@@ -1,9 +1,17 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import xml.etree.ElementTree as ET
 import os
 import sys
 import math
 from datetime import datetime
 from pathlib import Path
+
+
+# Adiciona a raiz do projeto ao sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from tools import ipxact2rtl
 
 # Namespace IP-XACT
 NS = {'ipxact': 'http://www.accellera.org/XMLSchema/IPXACT/1685-2022'}
@@ -13,15 +21,7 @@ def get_absolute_path(relative_path):
     script_dir = Path(__file__).parent
     return (script_dir / relative_path).resolve()
 
-def parse_enumerated_values(field):
-    """Extrai valores enumerados de um campo."""
-    enum_values = {}
-    for enum in field.findall('ipxact:enumeratedValues/ipxact:enumeratedValue', NS):
-        name_elem = enum.find('ipxact:name', NS)
-        value_elem = enum.find('ipxact:value', NS)
-        if name_elem is not None and value_elem is not None:
-            enum_values[value_elem.text] = name_elem.text
-    return enum_values if enum_values else None
+
 
 def parse_ipxact(input_xml):
     """Extrai dados do IP-XACT para geração de CSR."""
@@ -60,51 +60,9 @@ def parse_ipxact(input_xml):
                 
                 fields = {}
                 for field in reg.findall('ipxact:field', NS):
-                    field_name = field.find('ipxact:name', NS).text
-                    bit_offset = int(field.find('ipxact:bitOffset', NS).text)
-                    bit_width = int(field.find('ipxact:bitWidth', NS).text)
-                    access = field.find('ipxact:access', NS).text if field.find('ipxact:access', NS) is not None else 'read-write'
-                    volatile = field.find('ipxact:volatile', NS) is not None and field.find('ipxact:volatile', NS).text.lower() == 'true'
-                    
-                    # Valor de reset
-                    reset_value = "'h0"
-                    resets = field.find('ipxact:resets', NS)
-                    if resets is not None:
-                        reset = resets.find('ipxact:reset', NS)
-                        if reset is not None:
-                            reset_value_elem = reset.find('ipxact:value', NS)
-                            if reset_value_elem is not None:
-                                reset_value = reset_value_elem.text
-                    else:
-                        reset_value_elem = field.find('.//ipxact:value', NS)
-                        if reset_value_elem is not None:
-                            reset_value = reset_value_elem.text
-                    
-                    description = field.find('ipxact:description', NS).text if field.find('ipxact:description', NS) is not None else ""
-                    
-                    # Processa valores enumerados
-                    enum_values = parse_enumerated_values(field)
-                    enum_name = None
-                    if enum_values:
-                        # Cria assinatura única do enum
-                        signature = tuple(sorted(enum_values.items()))
-                        if signature in enum_cache:
-                            enum_name = enum_cache[signature]  # reutiliza enum existente
-                        else:
-                            enum_name = f"{reg_name}_{field_name}_e"
-                            enum_definitions[enum_name] = enum_values
-                            enum_cache[signature] = enum_name
-                    
-                    fields[field_name] = {
-                        'bit_offset': bit_offset,
-                        'bit_width': bit_width,
-                        'access': access,
-                        'volatile': volatile,
-                        'reset_value': reset_value,
-                        'description': description,
-                        'enum': enum_name
-                    }
-                
+                    field_info = ipxact2rtl.parse_field_ipxact(field, NS, reg_name, enum_cache, enum_definitions)
+                    fields[field_info['field_name']] = field_info
+
                 registers[reg_name] = {
                     'offset': offset,
                     'size': size,
