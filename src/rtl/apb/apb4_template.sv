@@ -2,79 +2,99 @@ module apb4_slave #(
     parameter ADDR_WIDTH = 3,
     parameter DATA_WIDTH = 32
 )(
-    bus_interface intf,
+    Bus2Reg_intf intf,
     Bus2Master_intf s_apb4
 );
 
-    //--------------------------------------------------------------------------
-    // Internal signals
-    //--------------------------------------------------------------------------
-    logic is_active;
-    logic psel_prev;
-    logic bus_wr_ack;
-    logic bus_rd_ack;
-    logic bus_wr_err;
-    logic bus_rd_err;
+    //---------
+    // FSM 
+    //---------
+    typedef enum logic [1:0] {
+        IDLE   = 2'b00,
+        SETUP  = 2'b01,
+        ACCESS = 2'b10
+    } apb_state_t;
+
+    apb_state_t current_state, next_state;
+
+    logic transaction_complete;
+    logic write_enable;  
+    // lógica de próximo estado
+    always_comb begin
+        case (current_state)
+            IDLE: begin
+                if (s_apb4.psel && !s_apb4.penable)
+                    next_state = SETUP;
+                else
+                    next_state = IDLE;
+            end
+            SETUP: begin
+                if (s_apb4.psel && s_apb4.penable)
+                    next_state = ACCESS;
+                else if (!s_apb4.psel)
+                    next_state = IDLE;
+                else
+                    next_state = SETUP;
+            end
+            ACCESS: begin
+                if (transaction_complete) begin
+                    if (s_apb4.psel && !s_apb4.penable)
+                        next_state = SETUP;
+                    else
+                        next_state = IDLE;
+                end else
+                    next_state = ACCESS;
+            end
+            default: next_state = IDLE;
+        endcase
+    end
 
     //--------------------------------------------------------------------------
-    // Write Response Assignment
-    //--------------------------------------------------------------------------
-    // Para writes, assumimos que sempre são completados imediatamente
-    assign bus_wr_ack = intf.bus_req & intf.bus_req_is_wr & intf.bus_ready;
-    assign bus_rd_ack = intf.bus_req & !intf.bus_req_is_wr & intf.bus_ready;
-
-    assign bus_wr_err = intf.bus_req & intf.bus_req_is_wr & intf.bus_err;
-    assign bus_rd_err = intf.bus_req & !intf.bus_req_is_wr & intf.bus_err;
-
-    //--------------------------------------------------------------------------
-    // APB4 Request Detection
+    // State Register
     //--------------------------------------------------------------------------
     always_ff @(posedge intf.clk or posedge intf.rst) begin
         if (intf.rst) begin
-            is_active        <= 1'b0;
-            psel_prev        <= 1'b0;
-            intf.bus_req        <= 1'b0;
-            intf.bus_req_is_wr  <= 1'b0;
-            intf.bus_addr       <= '0;
-            intf.bus_wr_data    <= '0;
-            intf.bus_wr_biten   <= '0;
+            current_state <= IDLE;
         end else begin
-            // Store previous psel for edge detection
-            psel_prev <= s_apb4.psel;
-
-            if (!is_active) begin
-                // Detect rising edge of psel to start new transaction
-                if (s_apb4.psel && !psel_prev) begin
-                    is_active           <= 1'b1;
-                    intf.bus_req           <= 1'b1;
-                    intf.bus_req_is_wr     <= s_apb4.pwrite;
-                    intf.bus_addr          <= s_apb4.paddr[ADDR_WIDTH-1:0];
-                    intf.bus_wr_data       <= s_apb4.pwdata;
-                    intf.bus_wr_biten      <= s_apb4.pstrb;
-                end else begin
-                    intf.bus_req <= 1'b0;
-                end
-            end else begin
-                // Clear request after one cycle
-                intf.bus_req <= 1'b0;
-                
-                // End transaction when response is received
-                if (bus_rd_ack || bus_wr_ack) begin
-                    is_active <= 1'b0;
-                end
-            end
+            current_state <= next_state;
         end
     end
 
     //--------------------------------------------------------------------------
-    // APB4 Response Signals
+    // Lógica Combinacional para Saídas
     //--------------------------------------------------------------------------
-    assign s_apb4.pready  = bus_rd_ack | bus_wr_ack;
-    assign s_apb4.prdata  = intf.bus_rd_data;
-    assign s_apb4.pslverr = bus_rd_err | bus_wr_err;
+    always_comb begin
+        // valores padrão para evitar latches
+        intf.bus_req        = 1'b0;
+        intf.bus_req_is_wr  = 1'b0;
+        intf.bus_addr       = '0;
+        intf.bus_wr_data    = '0;
+        intf.bus_wr_biten   = '0;
+
+        // logica baseada no estado atual
+        if (current_state == ACCESS) begin
+            intf.bus_req       = 1'b1;
+            intf.bus_req_is_wr = write_enable; 
+            intf.bus_addr      = s_apb4.paddr;  
+            intf.bus_wr_data   = s_apb4.pwdata;
+            // intf.o_bus_wr_biten pode precisar ser ajustado conforme necessário.
+        end
+    end
 
     //--------------------------------------------------------------------------
-    // Stall signals (not used in this implementation)
+    // Transaction Completion
+    //--------------------------------------------------------------------------
+    assign transaction_complete = (intf.bus_ready);
+
+    //--------------------------------------------------------------------------
+    // APB Response Signals
+    //--------------------------------------------------------------------------
+    assign s_apb4.pready  = (current_state == ACCESS) ? transaction_complete : 1'b0;
+    assign s_apb4.prdata  = (current_state == ACCESS) ? intf.bus_rd_data : '0;
+    assign s_apb4.pslverr = (current_state == ACCESS) ? intf.bus_err : 1'b0;
+
+    //--------------------------------------------------------------------------
+    // Stall signals
     //--------------------------------------------------------------------------
     assign intf.bus_req_stall_wr = 1'b0;
     assign intf.bus_req_stall_rd = 1'b0;
