@@ -27,7 +27,7 @@ interface axi_lite #(
     logic                   AWREADY;
 
     //Write Data Channel - W
-    logic [DATA_WIDTH]      WDATA;
+    logic [DATA_WIDTH:0]    WDATA;
     logic [3:0]             WSTRB;
     logic                   WVALID;
     logic                   WREADY;

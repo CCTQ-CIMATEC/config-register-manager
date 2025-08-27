@@ -164,12 +164,20 @@ def generate_package(ipxact_data, output_dir):
                     # Calcula o número de bits necessário para representar o enum
                     enum_size = max(len(bin(len(enum_values))) - 3, 1)
                     f.write(f"    typedef enum logic [{enum_size}:0] {{\n")
-                    for value, name in enum_values.items():
+                    items = list(enum_values.items())
+                    last_value, _ = items[-1]  # pega o último par (valor, nome)
+
+                    for value, name in items:
                         # Remove caracteres inválidos para nomes SystemVerilog
                         clean_name = name.replace('\\', '').replace(' ', '_')
-                        f.write(f"        {clean_name} = {value},\n")
+
+                        print(f"\n\n AQUI {last_value} AQUI \n\n")
+
+                        if value != last_value:
+                            f.write(f"        {clean_name} = {value},\n")
+                        else:
+                            f.write(f"        {clean_name} = {value}\n")
                     first_key = list(enum_values.keys())[0]
-                    f.write(f"        {enum_name.upper()}_DEFAULT = {first_key}\n")
                     f.write(f"    }} {enum_name};\n\n")
             
             # Gera typedef structs para entrada (hardware -> registrador)

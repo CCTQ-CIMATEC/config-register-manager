@@ -32,8 +32,6 @@ module axi4lite_tb;
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
     ) dut (
-        .clk(clk),
-        .rst_n(rst_n),
         .SAXI(s_axi4_lite.slave_ports)
     );
 

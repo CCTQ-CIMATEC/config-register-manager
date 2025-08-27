@@ -122,7 +122,7 @@ fi
 
 echo "Etapa 5: Integração com vivado"
 
-source /opt/Xilinx/Vitis/2024.1/settings64.sh
+source ~/QuIIN/Vivado/2024.2/settings64.sh
 ./scripts/xrun.sh -top ${BUS_PROTOCOL}_tb -vivado "--R"
 
 echo "✅ Pipeline concluído com sucesso!"
