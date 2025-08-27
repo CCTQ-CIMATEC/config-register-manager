@@ -197,7 +197,7 @@ endmodule
 
         with open(output_file, 'w', encoding='utf-8') as f:
             for file_name in self.source_files:
-                f.write(file_name + '\n')
+                f.write("${CONFIG_REGISTER_MANAGER}/build/rtl/"+file_name + '\n')
         
         print(f"✓ Arquivo srclist gerado: {output_file}")
         return output_file
