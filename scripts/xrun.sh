@@ -110,7 +110,7 @@ main() {
 
     #echo ${CURRENT_DIR}
     # Generate source list path
-    list=$("../scripts/srclist2path.sh" "../build/rtl/${TOP_NAME}.srclist")
+    list=$("../scripts/srclist2path.sh" "../srclist/${TOP_NAME}.srclist")
     echo "${list}"
 
     # Run simulation

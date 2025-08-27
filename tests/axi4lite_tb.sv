@@ -1,4 +1,4 @@
-module axi4_lite_csr_top_tb;
+module axi4lite_tb;
 
     parameter DATA_WIDTH = 32;
     parameter ADDR_WIDTH = 32;
