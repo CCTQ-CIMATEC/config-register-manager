@@ -26,12 +26,13 @@ module axi4lite_tb;
         .ACLK(clk),
         .ARESETN(rst_n)
     );
-
+    
     // DUT Instance
     axilite_slave #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
     ) dut (
+
         .SAXI(s_axi4_lite.slave_ports)
     );
 

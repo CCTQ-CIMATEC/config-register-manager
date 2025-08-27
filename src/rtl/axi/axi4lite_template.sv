@@ -3,7 +3,7 @@ module axilite_slave #(
     parameter logic ADDR_WIDTH = 32,
     parameter logic MEM_DEPTH = 32
 )(
-    axi_lite intf,
+    //axi_lite intf,
     Bus2Master_intf SAXI
 );
     // Memory array
@@ -34,8 +34,8 @@ module axilite_slave #(
     endfunction
     
     // Sequential logic
-    always_ff @(posedge intf.ACLK or negedge intf.ARESETN) begin
-        if (!intf.ARESETN) begin
+    always_ff @(posedge SAXI.ACLK or negedge SAXI.ARESETN) begin
+        if (!SAXI.ARESETN) begin
             read_state <= READ_IDLE;
             write_state <= WRITE_IDLE;
             read_addr <= '0;
