@@ -6,6 +6,7 @@ ADDR_WIDTH=3
 BUS_PROTOCOL="apb4"
 BUILD_DIR="build"
 CLEAN_FLAG=false
+VIVADO_PARMS="--R"
 
 # Função para exibir ajuda
 show_help() {
@@ -18,6 +19,7 @@ show_help() {
     echo "  -p PROTOCOL     Protocolo do barramento (padrão: axi4lite)"
     echo "  -d DIR          Diretório de build (padrão: build)"
     echo "  -h              Mostrar esta ajuda"
+    echo "  --v|-vivado <\"--vivado_params\">  Pass Vivado parameters"
     echo ""
     echo "Exemplos:"
     echo "  $0 -c -b 64 -a 4 -p axi4"
@@ -43,34 +45,46 @@ clean_build() {
 }
 
 # Processar argumentos
-while getopts "cb:a:p:d:h" opt; do
-    case $opt in
-        c)
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -c)
             CLEAN_FLAG=true
+            shift
             ;;
-        b)
-            BUS_WIDTH="$OPTARG"
+        -b)
+            BUS_WIDTH="$2"
+            shift 2
             ;;
-        a)
-            ADDR_WIDTH="$OPTARG"
+        -a)
+            ADDR_WIDTH="$2"
+            shift 2
             ;;
-        p)
-            BUS_PROTOCOL="$OPTARG"
+        -p)
+            BUS_PROTOCOL="$2"
+            shift 2
             ;;
-        d)
-            BUILD_DIR="$OPTARG"
+        -d)
+            BUILD_DIR="$2"
+            shift 2
             ;;
-        h)
+        -h)
             show_help
             exit 0
             ;;
-        \?)
-            echo "❌ Opção inválida: -$OPTARG" >&2
+        --vivado)
+            shift
+            VIVADO_PARMS="$1"
+            echo "INFO: Parameters '${VIVADO_PARMS}' are being passed directly to Vivado"
+            shift
+            ;;
+        -*)
+            echo "❌ Opção inválida: $1" >&2
             show_help
             exit 1
             ;;
-        :)
-            echo "❌ Opção -$OPTARG requer um argumento." >&2
+        *)
+            # argumento extra inesperado
+            echo "❌ Argumento inesperado: $1" >&2
             show_help
             exit 1
             ;;
@@ -122,7 +136,6 @@ fi
 
 echo "Etapa 5: Integração com vivado"
 
-source ~/QuIIN/Vivado/2024.2/settings64.sh
-./scripts/xrun.sh -top ${BUS_PROTOCOL}_tb -vivado "--R"
+./scripts/xrun.sh -top ${BUS_PROTOCOL}_tb -vivado ${VIVADO_PARMS}
 
 echo "✅ Pipeline concluído com sucesso!"
