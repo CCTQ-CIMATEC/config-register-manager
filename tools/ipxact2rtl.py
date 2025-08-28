@@ -475,107 +475,69 @@ def _write_single_enum(f, enum_name, enum_values):
     
     f.write(f"    }} {enum_name};\n\n")
 
-
 def _write_input_structures(f, component_data):
     """Escreve estruturas de entrada (hardware -> registrador)."""
     f.write("    // Input structures (Hardware -> Register)\n")
+    # Structs para campos individuais que precisam de entrada HW
     for reg_name, reg_info in component_data['registers'].items():
         for field_name, field_info in reg_info['fields'].items():
             if needs_hw_input(field_info):
-                _write_single_field_input_typedef(f, component_data['name'], reg_name, field_name, field_info)
+                f.write(f"    typedef struct {{\n")
+                
+                if field_info['enum']:
+                    f.write(f"        {field_info['enum']} next;\n")
+                elif field_info['bit_width'] > 1:
+                    f.write(f"        logic [{field_info['bit_width']-1}:0] next;\n")
+                else:
+                    f.write(f"        logic next;\n")
+                    
+                f.write(f"        logic we;\n")
+                f.write(f"    }} {component_data['name']}__{reg_name}__{field_name}__in_t;\n\n")
     
     # Structs para registradores com entrada HW
     for reg_name, reg_info in component_data['registers'].items():
-        hw_input_fields = [
-            f for f, info in reg_info['fields'].items()
-            if needs_hw_input(info)
-        ]
-        
+        hw_input_fields = [f for f, info in reg_info['fields'].items() if needs_hw_input(info)]
         if hw_input_fields:
-            _write_single_register_input_typedef(f, component_data['name'], reg_name, hw_input_fields)
+            f.write(f"    typedef struct {{\n")
+            for field_name in hw_input_fields:
+                f.write(f"        {component_data['name']}__{reg_name}__{field_name}__in_t {field_name};\n")
+            f.write(f"    }} {component_data['name']}__{reg_name}__in_t;\n\n")
     
     # Struct principal de entrada
-        _write_main_input_typedef(f, component_data)
-
-
-def _write_single_field_input_typedef(f, component_name, reg_name, field_name, field_info):
-    """Escreve typedef para um único campo de entrada."""
-    f.write(f"    typedef struct {{\n")
-    
-    if field_info['enum']:
-        f.write(f"        {field_info['enum']} next;\n")
-    elif field_info['bit_width'] > 1:
-        f.write(f"        logic [{field_info['bit_width']-1}:0] next;\n")
-    else:
-        f.write(f"        logic next;\n")
-    
-    f.write(f"        logic we;\n")
-    f.write(f"    }} {component_name}__{reg_name}__{field_name}__in_t;\n\n")
-
-
-def _write_single_register_input_typedef(f, component_name, reg_name, hw_input_fields):
-    """Escreve typedef para um único registrador de entrada."""
-    f.write(f"    typedef struct {{\n")
-    for field_name in hw_input_fields:
-        f.write(f"        {component_name}__{reg_name}__{field_name}__in_t {field_name};\n")
-    f.write(f"    }} {component_name}__{reg_name}__in_t;\n\n")
-
-
-def _write_main_input_typedef(f, component_data):
-    """Escreve typedef principal de entrada."""
-    if not component_data['hw_input_regs']:
-        return
-    
-    f.write(f"    typedef struct {{\n")
-    for reg_name in component_data['hw_input_regs']:
-        f.write(f"        {component_data['name']}__{reg_name}__in_t {reg_name};\n")
-    f.write(f"    }} {component_data['name']}__in_t;\n\n")
-
+    hw_input_regs = [r for r, info in component_data['registers'].items() 
+                    if any(needs_hw_input(f_info) for f_info in info['fields'].values())]
+    if hw_input_regs:
+        f.write(f"    typedef struct {{\n")
+        for reg_name in hw_input_regs:
+            f.write(f"        {component_data['name']}__{reg_name}__in_t {reg_name};\n")
+        f.write(f"    }} {component_data['name']}__in_t;\n\n")
 
 def _write_output_structures(f, component_data):
     """Escreve estruturas de saída (registrador -> hardware)."""
     f.write("    // Output structures (Register -> Hardware)\n")
-    
+    # Structs para campos individuais
     for reg_name, reg_info in component_data['registers'].items():
         for field_name, field_info in reg_info['fields'].items():
             if field_info['access'] != 'write-only':
-                _write_single_field_output_typedef(f, component_data['name'], reg_name, field_name, field_info)
-                
+                f.write(f"    typedef struct {{\n")
+                if field_info['enum']:
+                    f.write(f"        {field_info['enum']} value;\n")
+                elif field_info['bit_width'] > 1:
+                    f.write(f"        logic [{field_info['bit_width']-1}:0] value;\n")
+                else:
+                    f.write(f"        logic value;\n")
+                f.write(f"    }} {component_data['name']}__{reg_name}__{field_name}__out_t;\n\n")
+    
+    # Structs para registradores
     for reg_name, reg_info in component_data['registers'].items():
-        output_fields = [
-            f for f, info in reg_info['fields'].items()
-            if info['access'] != 'write-only'
-        ]
-        
+        output_fields = [f for f, info in reg_info['fields'].items() if info['access'] != 'write-only']
         if output_fields:
-            _write_single_register_output_typedef(f, component_data['name'], reg_name, output_fields)
-
-    _write_main_output_typedef(f, component_data)
-
-def _write_single_field_output_typedef(f, component_name, reg_name, field_name, field_info):
-    """Escreve typedef para um único campo de saída."""
-    f.write(f"    typedef struct {{\n")
+            f.write(f"    typedef struct {{\n")
+            for field_name in output_fields:
+                f.write(f"        {component_data['name']}__{reg_name}__{field_name}__out_t {field_name};\n")
+            f.write(f"    }} {component_data['name']}__{reg_name}__out_t;\n\n")
     
-    if field_info['enum']:
-        f.write(f"        {field_info['enum']} value;\n")
-    elif field_info['bit_width'] > 1:
-        f.write(f"        logic [{field_info['bit_width']-1}:0] value;\n")
-    else:
-        f.write(f"        logic value;\n")
-    
-    f.write(f"    }} {component_name}__{reg_name}__{field_name}__out_t;\n\n")
-
-
-def _write_single_register_output_typedef(f, component_name, reg_name, output_fields):
-    """Escreve typedef para um único registrador de saída."""
-    f.write(f"    typedef struct {{\n")
-    for field_name in output_fields:
-        f.write(f"        {component_name}__{reg_name}__{field_name}__out_t {field_name};\n")
-    f.write(f"    }} {component_name}__{reg_name}__out_t;\n\n")
-
-
-def _write_main_output_typedef(f, component_data):
-    """Escreve typedef principal de saída."""
+    # Struct principal de saída
     f.write(f"    typedef struct {{\n")
     for reg_name in component_data['registers'].keys():
         f.write(f"        {component_data['name']}__{reg_name}__out_t {reg_name};\n")

@@ -75,72 +75,10 @@ def generate_package(ipxact_data, output_dir):
                     ipxact2rtl._write_single_enum(f, enum_name, enum_values)
 
             # Gera typedef structs para entrada (hardware -> registrador)
-            f.write("    // Input structures (Hardware -> Register)\n")
-            
-            # Structs para campos individuais que precisam de entrada HW
-            for reg_name, reg_info in component_data['registers'].items():
-                for field_name, field_info in reg_info['fields'].items():
-                    if ipxact2rtl.needs_hw_input(field_info):
-                        f.write(f"    typedef struct {{\n")
-                        
-                        if field_info['enum']:
-                            f.write(f"        {field_info['enum']} next;\n")
-                        elif field_info['bit_width'] > 1:
-                            f.write(f"        logic [{field_info['bit_width']-1}:0] next;\n")
-                        else:
-                            f.write(f"        logic next;\n")
-                            
-                        f.write(f"        logic we;\n")
-                        f.write(f"    }} {component_data['name']}__{reg_name}__{field_name}__in_t;\n\n")
-            
-            # Structs para registradores com entrada HW
-            for reg_name, reg_info in component_data['registers'].items():
-                hw_input_fields = [f for f, info in reg_info['fields'].items() if ipxact2rtl.needs_hw_input(info)]
-                if hw_input_fields:
-                    f.write(f"    typedef struct {{\n")
-                    for field_name in hw_input_fields:
-                        f.write(f"        {component_data['name']}__{reg_name}__{field_name}__in_t {field_name};\n")
-                    f.write(f"    }} {component_data['name']}__{reg_name}__in_t;\n\n")
-            
-            # Struct principal de entrada
-            hw_input_regs = [r for r, info in component_data['registers'].items() 
-                            if any(ipxact2rtl.needs_hw_input(f_info) for f_info in info['fields'].values())]
-            if hw_input_regs:
-                f.write(f"    typedef struct {{\n")
-                for reg_name in hw_input_regs:
-                    f.write(f"        {component_data['name']}__{reg_name}__in_t {reg_name};\n")
-                f.write(f"    }} {component_data['name']}__in_t;\n\n")
-            
+            ipxact2rtl._write_input_structures(f, component_data)
             # Gera typedef structs para saída (registrador -> hardware)
-            f.write("    // Output structures (Register -> Hardware)\n")
+            ipxact2rtl._write_output_structures(f, component_data)
             
-            # Structs para campos individuais
-            for reg_name, reg_info in component_data['registers'].items():
-                for field_name, field_info in reg_info['fields'].items():
-                    if field_info['access'] != 'write-only':
-                        f.write(f"    typedef struct {{\n")
-                        if field_info['enum']:
-                            f.write(f"        {field_info['enum']} value;\n")
-                        elif field_info['bit_width'] > 1:
-                            f.write(f"        logic [{field_info['bit_width']-1}:0] value;\n")
-                        else:
-                            f.write(f"        logic value;\n")
-                        f.write(f"    }} {component_data['name']}__{reg_name}__{field_name}__out_t;\n\n")
-            
-            # Structs para registradores
-            for reg_name, reg_info in component_data['registers'].items():
-                output_fields = [f for f, info in reg_info['fields'].items() if info['access'] != 'write-only']
-                if output_fields:
-                    f.write(f"    typedef struct {{\n")
-                    for field_name in output_fields:
-                        f.write(f"        {component_data['name']}__{reg_name}__{field_name}__out_t {field_name};\n")
-                    f.write(f"    }} {component_data['name']}__{reg_name}__out_t;\n\n")
-            
-            # Struct principal de saída
-            f.write(f"    typedef struct {{\n")
-            for reg_name in component_data['registers'].keys():
-                f.write(f"        {component_data['name']}__{reg_name}__out_t {reg_name};\n")
-            f.write(f"    }} {component_data['name']}__out_t;\n\n")
             f.write("endpackage\n")
         
         print(f"Package gerado: {output_file}")
