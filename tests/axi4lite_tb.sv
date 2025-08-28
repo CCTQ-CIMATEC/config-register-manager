@@ -26,13 +26,22 @@ module axi4lite_tb;
         .ACLK(clk),
         .ARESETN(rst_n)
     );
+
+        // AXI4-Lite Interface instance
+    Bus2Reg_intf #(
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) reg_intf (
+        .clk(clk),
+        .rst_n(rst_n)
+    );
     
     // DUT Instance
     axilite_slave #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
     ) dut (
-
+        .intf(reg_intf),
         .SAXI(s_axi4_lite.slave_ports)
     );
 
