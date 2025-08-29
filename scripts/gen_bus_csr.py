@@ -89,14 +89,14 @@ class APB4RTLGenerator:
             }
         elif self.bus_type == "axi4lite":
             return {
-                "bus_interface_name": "aaxi4lite2Reg_intf",
-                "slave_connection": "aaxi4lite2Reg_intf.BUS",
+                "bus_interface_name": "axi4lite2Master_intf",
+                "slave_connection": "axi4lite2Master_intf.slave",
             }
         else:
             # Default para APB4
             return {
                 "bus_interface_name": "apb42Master_intf",
-                "slave_connection": "apb42Master_intf.BUS",
+                "slave_connection": "apb42Master_intf.slave",
             }
     
     def generate_rtl_content(self):
