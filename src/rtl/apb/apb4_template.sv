@@ -25,11 +25,6 @@ module apb4_slave #(
     logic                  write_reg;
     logic                  capture_signals;
 
-    //-------------------
-    // memória do slave
-    //-------------------
-    logic [DATA_WIDTH-1:0] regfile [0:(1<<ADDR_WIDTH)-1];
-
     //---------------------------
     // próximo estado
     //--------------------------
@@ -94,19 +89,6 @@ module apb4_slave #(
     end
 
     //--------------------------------------------------------------------------
-    // write no regfile
-    //--------------------------------------------------------------------------
-    always_ff @(posedge intf.clk or negedge intf.rst) begin
-        if (!intf.rst) begin
-            for (int i = 0; i < (1<<ADDR_WIDTH); i++) begin
-                regfile[i] <= '0;
-            end
-        end else if (capture_signals && write_reg) begin
-            regfile[addr_reg] <= wdata_reg;
-        end
-    end
-
-    //--------------------------------------------------------------------------
     // comb logic para saída no barramento interno
     //--------------------------------------------------------------------------
     always_comb begin
@@ -140,9 +122,7 @@ module apb4_slave #(
     // Sinais de resposta APB4
     //--------------------------------------------------------------------------
     assign s_apb4.pready  = (current_state == ACCESS) ? transaction_complete : 1'b0;
-    assign s_apb4.prdata  = (current_state == ACCESS && !write_reg) 
-                            ? regfile[addr_reg] 
-                            : '0;
+    assign s_apb4.prdata  = (current_state == ACCESS) ? intf.bus_rd_data : '0;
     assign s_apb4.pslverr = (current_state == ACCESS) ? intf.bus_err : 1'b0;
 
     //--------------------------------------------------------------------------

@@ -98,8 +98,10 @@ if [ "$CLEAN_FLAG" = true ]; then
 fi
 
 echo "Etapa 0: Verificando/Criando estrutura de diretórios..."
+# Criar diretório build principal se não existir
 mkdir -p "${BUILD_DIR}"
 
+# Criar subdiretórios dentro de build se não existirem
 for subdir in "csv" "rtl" "ipxact"; do
     dir_path="${BUILD_DIR}/${subdir}"
     if [ ! -d "${dir_path}" ]; then
@@ -133,12 +135,6 @@ if ! python3 scripts/gen_bus_csr.py --bus "${BUS_PROTOCOL}" --data-width "${BUS_
 fi
 
 echo "Etapa 5: Integração com Vivado"
-# ⚠️ No Windows, esse path não existe. 
-# Se você tiver Vivado instalado em C:/Xilinx, ajuste o caminho abaixo.
-if [ -f "/opt/Xilinx/Vitis/2024.1/settings64.sh" ]; then
-    source /opt/Xilinx/Vitis/2024.1/settings64.sh
-fi
-
 ./scripts/xrun.sh -top ${BUS_PROTOCOL}_tb -vivado ${VIVADO_PARMS}
 
 echo "✅ Pipeline concluído com sucesso!"
