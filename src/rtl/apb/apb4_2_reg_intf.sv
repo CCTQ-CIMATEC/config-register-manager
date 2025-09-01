@@ -59,4 +59,20 @@ interface Bus2Reg_intf
        output bus_err
    );
 
+   //--------------------------------------------------------------------------
+   //  Utility Functions
+   // --------------------------------------------------------------------------
+    function void display_transaction();
+        if (bus_req) begin
+            $display("[%0t] REG_MAP Transaction:", $time);
+            $display("   REQ      = %0b", bus_req);
+            $display("   IS_WR    = %0b", bus_req_is_wr);
+            $display("   ADDR     = 0x%h", bus_addr);
+            $display("   WR_DATA  = 0x%h", bus_wr_data);
+            $display("   WR_BITEN = 0x%h", bus_wr_biten);
+            $display("   RD_DATA  = 0x%h", bus_rd_data);
+            $display("   READY    = %0b", bus_ready);
+            $display("   ERR      = %0b", bus_err);
+        end
+    endfunction
 endinterface

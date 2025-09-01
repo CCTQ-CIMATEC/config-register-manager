@@ -308,9 +308,9 @@ def _write_single_field_logic(f, component_name, reg_name, field_info):
 
 def _write_field_sequential_logic(f, reg_name, field_info):
     """Escreve lógica sequencial para um campo."""
-    f.write("    always_ff @(posedge intf.clk) begin\n")
+    f.write("    always_ff @(posedge intf.clk or negedge intf.rst) begin\n")
     if field_info['access'] != 'write-only':
-        f.write("        if(intf.rst) begin\n")
+        f.write("        if(!intf.rst) begin\n")
         if field_info['enum']:
             f.write(f"            field_storage.{reg_name}.{field_info['field_name']}.value <= {field_info['enum']}'({format_reset_value(field_info['reset_value'], field_info['bit_width'])});\n")
         else:
