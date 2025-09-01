@@ -152,7 +152,6 @@ module apb4_tb;
     //--------------------------------------------------------------------------
     initial begin
         // Initialize signals
-        hwif_in <= '{default:0};
         test_passed <= 1;
         
         // Initialize APB4 interface through modport
@@ -181,9 +180,9 @@ module apb4_tb;
         
         expected_data_writed = pack_ctrl(hwif_out.ctrl);
         if (expected_data_writed === expected_data) begin
-            $display("✅ READBACK 2 PASSED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
+            $display("✅ WRITE PASSED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
         end else begin
-            $display("❌ READBACK 2 FAILED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
+            $display("❌ WRITE 2 FAILED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
             test_passed = 0;
         end
         // Allow some time for the write to propagate
