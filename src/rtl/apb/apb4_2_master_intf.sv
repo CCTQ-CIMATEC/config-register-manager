@@ -140,19 +140,19 @@ interface Bus2Master_intf #(
     // end
 
     //--------------------------------------------------------------------------
-    // Utility Functions
-    //--------------------------------------------------------------------------
-    // function string get_state();
-    //     if (!psel && !penable) return "IDLE";
-    //     if (psel && !penable) return "SETUP";
-    //     if (psel && penable) return "ACCESS";
-    //     return "UNKNOWN";
-    // endfunction
+   //  Utility Functions
+   // --------------------------------------------------------------------------
+     function string get_state();
+         if (!psel && !penable) return "IDLE";
+         if (psel && !penable) return "SETUP";
+         if (psel && penable) return "ACCESS";
+         return "UNKNOWN";
+     endfunction
 
-    // function void display_transaction();
-    //     $display("[%0t] APB4 State: %s, PWRITE: %b, PADDR: 0x%h, PWDATA: 0x%h, PRDATA: 0x%h, PREADY: %b, PSLVERR: %b",
-    //              $time, get_state(), pwrite, paddr, pwdata, prdata, pready, pslverr);
-    // endfunction
+     function void display_transaction();
+         $display("[%0t] APB4 State: %s, PWRITE: %b, PADDR: 0x%h, PWDATA: 0x%h, PRDATA: 0x%h, PREADY: %b, PSLVERR: %b",
+                  $time, get_state(), pwrite, paddr, pwdata, prdata, pready, pslverr);
+    endfunction
 
 endinterface
 

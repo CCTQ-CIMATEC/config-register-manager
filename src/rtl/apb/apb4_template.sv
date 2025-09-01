@@ -19,15 +19,20 @@ module apb4_slave #(
 
     logic transaction_complete;
 
-    // Registradores para capturar sinais no ACCESS
+    // reg para capturar sinais no ACCESS
     logic [ADDR_WIDTH-1:0] addr_reg;
     logic [DATA_WIDTH-1:0] wdata_reg;
     logic                  write_reg;
     logic                  capture_signals;
 
-    //--------------------------------------------------------------------------
-    // logica de próximo estado
-    //--------------------------------------------------------------------------
+    //-------------------
+    // memória do slave
+    //-------------------
+    logic [DATA_WIDTH-1:0] regfile [0:(1<<ADDR_WIDTH)-1];
+
+    //---------------------------
+    // próximo estado
+    //--------------------------
     always_comb begin
         case (current_state)
             IDLE: begin
@@ -82,7 +87,6 @@ module apb4_slave #(
             wdata_reg <= '0;
             write_reg <= 1'b0;
         end else if (capture_signals) begin
-            // Captura os sinais quando entramos no estado ACCESS
             addr_reg  <= s_apb4.paddr;
             wdata_reg <= s_apb4.pwdata;
             write_reg <= s_apb4.pwrite;
@@ -90,7 +94,20 @@ module apb4_slave #(
     end
 
     //--------------------------------------------------------------------------
-    // comb logical para saida
+    // write no regfile
+    //--------------------------------------------------------------------------
+    always_ff @(posedge intf.clk or negedge intf.rst) begin
+        if (!intf.rst) begin
+            for (int i = 0; i < (1<<ADDR_WIDTH); i++) begin
+                regfile[i] <= '0;
+            end
+        end else if (capture_signals && write_reg) begin
+            regfile[addr_reg] <= wdata_reg;
+        end
+    end
+
+    //--------------------------------------------------------------------------
+    // comb logic para saída no barramento interno
     //--------------------------------------------------------------------------
     always_comb begin
         // valores padrão para evitar latches
@@ -100,15 +117,12 @@ module apb4_slave #(
         intf.bus_wr_data    = '0;
         intf.bus_wr_biten   = '0;
 
-        // usa valores registrados quando no estado ACCESS
         if (current_state == ACCESS) begin
             intf.bus_req       = 1'b1;
             intf.bus_req_is_wr = write_reg; 
             intf.bus_addr      = addr_reg;  
             intf.bus_wr_data   = wdata_reg;
-            
-            // será?: bus_wr_biten agora é 4b (4 bits para byte enable)
-        
+
             if (write_reg) begin
                 intf.bus_wr_biten = 4'b1111; 
             end else begin
@@ -118,19 +132,21 @@ module apb4_slave #(
     end
 
     //--------------------------------------------------------------------------
-    // completar tansição 
+    // Completar transição 
     //--------------------------------------------------------------------------
     assign transaction_complete = (intf.bus_ready);
 
     //--------------------------------------------------------------------------
-    // sinais de resposta apb4
+    // Sinais de resposta APB4
     //--------------------------------------------------------------------------
     assign s_apb4.pready  = (current_state == ACCESS) ? transaction_complete : 1'b0;
-    assign s_apb4.prdata  = (current_state == ACCESS) ? intf.bus_rd_data : '0;
+    assign s_apb4.prdata  = (current_state == ACCESS && !write_reg) 
+                            ? regfile[addr_reg] 
+                            : '0;
     assign s_apb4.pslverr = (current_state == ACCESS) ? intf.bus_err : 1'b0;
 
     //--------------------------------------------------------------------------
-    // sinais stall
+    // Sinais stall
     //--------------------------------------------------------------------------
     assign intf.bus_req_stall_wr = 1'b0;
     assign intf.bus_req_stall_rd = 1'b0;
