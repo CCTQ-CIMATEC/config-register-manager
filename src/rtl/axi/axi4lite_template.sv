@@ -1,7 +1,7 @@
 module axi4lite_slave #(
-    parameter logic DATA_WIDTH = 32,
-    parameter logic ADDR_WIDTH = 32,
-    parameter logic MEM_DEPTH = 32  // Not used anymore, but kept for compatibility
+    parameter DATA_WIDTH = 32,
+    parameter ADDR_WIDTH = 32,
+    parameter MEM_DEPTH = 32  // Not used anymore, but kept for compatibility
 )(
     Bus2Reg_intf intf,          // This module is the BUS master
     Bus2Master_intf s_axi4lite            // This module is the AXI slave

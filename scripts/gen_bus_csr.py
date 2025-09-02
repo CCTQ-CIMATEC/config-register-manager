@@ -25,38 +25,6 @@ class APB4RTLGenerator:
         self.build_dir.mkdir(parents=True, exist_ok=True)
         print(f"✓ Diretório {self.build_dir} criado/verificado")
     
-    def copy_source_files(self):
-        """Copia os arquivos necessários do diretório src para build"""
-        source_files = []
-        if self.bus_type == "apb4":
-            source_files = [
-            "apb4_2_reg_intf.sv",
-            "apb4_2_master_intf.sv",
-            "apb4_template.sv"
-        ]
-        elif self.bus_type == "axi4lite":
-            source_files = [
-            "apb4_2_reg_intf.sv", #alterar depois
-            "apb4_2_master_intf.sv",
-            "apb4_template.sv"
-        ]
-        else:
-            source_files = [
-            "apb4_2_reg_intf.sv",
-            "apb4_2_master_intf.sv",
-            "apb4_template.sv"
-        ]
-        
-        for file_name in source_files:
-            src_file = self.src_dir / file_name
-            dst_file = self.build_dir / file_name
-            
-            if src_file.exists():
-                shutil.copy2(src_file, dst_file)
-                print(f"✓ Arquivo {file_name} copiado para {self.build_dir}")
-            else:
-                print(f"⚠ Arquivo {src_file} não encontrado")
-    
     def generate_bus2Reg_interface_params(self):
         """Gera os parâmetros específicos do barramento"""
         if self.bus_type == "apb4":
@@ -241,13 +209,10 @@ endmodule
             # 1. Criar diretórios
             self.create_directories()
             
-            # 2. Copiar arquivos fonte
-            self.copy_source_files()
-            
-            # 3. Gerar arquivo RTL
+            # 2. Gerar arquivo RTL
             rtl_file = self.write_rtl_file()
  
-            #4. Gerar srclist
+            # 3. Gerar srclist
             self.write_srclist_file()
             
             print("-" * 50)
