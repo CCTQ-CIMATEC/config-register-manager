@@ -10,8 +10,8 @@ module axi4lite_tb;
     logic rst_n;
     
     // Hardware Interface
-    // CSR_IP_Map__in_t  hwif_in;
-    // CSR_IP_Map__out_t hwif_out;
+    CSR_IP_Map__in_t  hwif_in;
+    CSR_IP_Map__out_t hwif_out;
     
     // Test variables
     logic [DATA_WIDTH-1:0] expected_data;
@@ -27,22 +27,20 @@ module axi4lite_tb;
         .ARESETN(rst_n)
     );
 
-        // AXI4-Lite Interface instance
-    Bus2Reg_intf #(
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH)
-    ) reg_intf (
-        .clk(clk),
-        .rst_n(rst_n)
-    );
-    
-    // DUT Instance
-    axilite_slave #(
+    axi4lite_csr_top #(
         .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .CSR_ADDR_WIDTH(CSR_ADDR_WIDTH)
     ) dut (
-        .intf(reg_intf),
-        .SAXI(s_axi4_lite.slave_ports)
+        .clk(clk),
+        .rst(rst_n),
+        
+        // APB4 Interface
+        .axi4lite2Master_intf(s_axi4_lite.slave),
+        
+        // Hardware Interface
+        .hwif_in(hwif_in),
+        .hwif_out(hwif_out)
     );
 
     // Clock Generation
@@ -61,6 +59,26 @@ module axi4lite_tb;
 
     // AXI4-Lite Write Task using interface clocking block
     task axi4_lite_write;
+
+            /*
+            
+            1. O Mestre coloca um endereço no canal de Write Address e os dados no canal de Write Data. 
+            Ao mesmo tempo, ele aciona AWVALID e WVALID, indicando que o endereço e os dados nos respectivos canais são válidos. 
+            BREADY também é acionado pelo Mestre, indicando que ele está pronto para receber uma resposta.
+
+            2. O Escravo aciona AWREADY e WREADY nos canais de Write Address e Write Data, respectivamente.
+
+            3. Como os sinais Valid e Ready estão presentes em ambos os canais (Write Address e Write Data), 
+            ocorre o handshake nesses canais, e os sinais Valid e Ready associados podem ser desativados. 
+            (Após ambos os handshakes, o escravo já possui o endereço e os dados da escrita).
+
+            4. O Escravo então aciona BVALID, indicando que há uma resposta válida no canal de Write Response 
+            (neste caso, a resposta é 2’b00, que corresponde a ‘OKAY’).
+
+            5. Na próxima borda de subida do clock, a transação é concluída, com os sinais Ready e Valid altos no canal de resposta de escrita.
+            
+            */    
+
         input [ADDR_WIDTH-1:0] addr;
         input [DATA_WIDTH-1:0] data;
         input [(DATA_WIDTH/8)-1:0] strb;
@@ -74,16 +92,20 @@ module axi4lite_tb;
             // Write Data Channel
             s_axi4_lite.master_cb.WDATA   <= data;
             s_axi4_lite.master_cb.WSTRB   <= strb;
+            // Write strobes. 4-bit signal indicating which of the 4-bytes of Write Data. Slaves can choose assume all bytes are valid
             s_axi4_lite.master_cb.WVALID  <= 1'b1;
             
             // Write Response Channel
+            // BREADY 	M→SM→S 	Response ready. Master generates this signal when it can accept a write response
             s_axi4_lite.master_cb.BREADY  <= 1'b1;
             
             // Wait for address and data handshakes
+            // AWREADY - Write address ready. Slave generates this signal when it can accept Write Address and control signals
+            // WREADY - 
             while (!(s_axi4_lite.master_cb.AWREADY && s_axi4_lite.master_cb.WREADY)) begin
                 @(s_axi4_lite.master_cb);
             end
-            
+
             // Deassert AWVALID and WVALID after handshake
             @(s_axi4_lite.master_cb);
             s_axi4_lite.master_cb.AWVALID <= 1'b0;
@@ -110,6 +132,20 @@ module axi4lite_tb;
 
     // AXI4-Lite Read Task using interface clocking block
     task axi4_lite_read;
+
+    /*1.O Mestre coloca um endereço no canal de Read Address e aciona ARVALID, 
+    indicando que o endereço é válido, além de acionar RREADY, indicando que está pronto para receber dados do Escravo.
+
+    2. O Escravo aciona ARREADY, indicando que está pronto para receber o endereço no barramento.
+
+    3. Como ARVALID e ARREADY estão acionados, na próxima borda de subida do clock ocorre o handshake. 
+    Após isso, o Mestre e o Escravo desativam ARVALID e ARREADY, respectivamente. (Neste ponto, o Escravo já recebeu o endereço solicitado).
+
+    4. O Escravo coloca os dados solicitados no canal de Read Data e aciona RVALID, indicando que os dados no canal são válidos. 
+    O Escravo também pode colocar uma resposta em RRESP, embora isso não ocorra neste caso.
+
+    5.Como RREADY e RVALID estão acionados, a próxima borda de subida do clock conclui a transação. RREADY e RVALID podem então ser desativados.*/
+
         input [ADDR_WIDTH-1:0] addr;
         output [DATA_WIDTH-1:0] data;
         output [1:0] resp;
@@ -382,7 +418,7 @@ module axi4lite_tb;
     end
 
     // State Monitoring
-    initial begin
+    /*initial begin
         forever begin
             @(posedge clk);
             if (s_axi4_lite.ARVALID || s_axi4_lite.RVALID || 
@@ -391,7 +427,7 @@ module axi4lite_tb;
                          $time, s_axi4_lite.get_read_state(), s_axi4_lite.get_write_state());
             end
         end
-    end
+    end*/
 
     // Assertion Monitoring
     initial begin
