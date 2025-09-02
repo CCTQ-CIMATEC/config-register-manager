@@ -176,15 +176,28 @@ module {self.bus_type}_csr_top #(
     //--------------------------------------------------------------------------
     // Assertions and Coverage (optional)
     //--------------------------------------------------------------------------
-`ifdef ASSERT_ON
-    // Add assertions here for verification
+    `ifdef ASSERT_ON
+        // Add assertions here for verification
+        initial begin
+            assert (DATA_WIDTH >= 8) else $error("DATA_WIDTH must be >= 8");
+            assert (ADDR_WIDTH >= 3) else $error("ADDR_WIDTH must be >= 3");
+            assert (CSR_ADDR_WIDTH >= 3) else $error("CSR_ADDR_WIDTH must be >= 3");
+        end
+    `endif
+
+
+    //--------------------------------------------------------------------------
+    // Monitoring using interface
+    //--------------------------------------------------------------------------
+    /*
     initial begin
-        assert (DATA_WIDTH >= 8) else $error("DATA_WIDTH must be >= 8");
-        assert (ADDR_WIDTH >= 3) else $error("ADDR_WIDTH must be >= 3");
-        assert (CSR_ADDR_WIDTH >= 3) else $error("CSR_ADDR_WIDTH must be >= 3");
+        $timeformat(-9, 0, " ns", 6);
+        forever begin
+            @(posedge clk);
+            {bus2Reg_params['bus_interface_name']}.display_transaction();
+        end
     end
-`endif
- 
+    */
 endmodule
  
 //------------------------------------------------------------------------------

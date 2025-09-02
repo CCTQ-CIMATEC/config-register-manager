@@ -18,8 +18,16 @@ module apb4_slave #(
     apb_state_t current_state, next_state;
 
     logic transaction_complete;
-    logic write_enable;  
-    // lógica de próximo estado
+
+    // reg para capturar sinais no ACCESS
+    logic [ADDR_WIDTH-1:0] addr_reg;
+    logic [DATA_WIDTH-1:0] wdata_reg;
+    logic                  write_reg;
+    logic                  capture_signals;
+
+    //---------------------------
+    // próximo estado
+    //--------------------------
     always_comb begin
         case (current_state)
             IDLE: begin
@@ -49,11 +57,11 @@ module apb4_slave #(
         endcase
     end
 
-    //--------------------------------------------------------------------------
-    // State Register
-    //--------------------------------------------------------------------------
-    always_ff @(posedge intf.clk or posedge intf.rst) begin
-        if (intf.rst) begin
+    //------------
+    // state reg
+    //-------------
+    always_ff @(posedge intf.clk or negedge intf.rst) begin
+        if (!intf.rst) begin
             current_state <= IDLE;
         end else begin
             current_state <= next_state;
@@ -61,7 +69,27 @@ module apb4_slave #(
     end
 
     //--------------------------------------------------------------------------
-    // Lógica Combinacional para Saídas
+    // sinal para capturar no começo do ACCESS
+    //--------------------------------------------------------------------------
+    assign capture_signals = (current_state == SETUP) && (next_state == ACCESS);
+
+    //--------------------------------------------------------------------------
+    // captura de sinais na transição SETUP -> ACCESS
+    //--------------------------------------------------------------------------
+    always_ff @(posedge intf.clk or negedge intf.rst) begin
+        if (!intf.rst) begin
+            addr_reg  <= '0;
+            wdata_reg <= '0;
+            write_reg <= 1'b0;
+        end else if (capture_signals) begin
+            addr_reg  <= s_apb4.paddr;
+            wdata_reg <= s_apb4.pwdata;
+            write_reg <= s_apb4.pwrite;
+        end
+    end
+
+    //--------------------------------------------------------------------------
+    // comb logic para saída no barramento interno
     //--------------------------------------------------------------------------
     always_comb begin
         // valores padrão para evitar latches
@@ -71,30 +99,34 @@ module apb4_slave #(
         intf.bus_wr_data    = '0;
         intf.bus_wr_biten   = '0;
 
-        // logica baseada no estado atual
         if (current_state == ACCESS) begin
             intf.bus_req       = 1'b1;
-            intf.bus_req_is_wr = write_enable; 
-            intf.bus_addr      = s_apb4.paddr;  
-            intf.bus_wr_data   = s_apb4.pwdata;
-            // intf.o_bus_wr_biten pode precisar ser ajustado conforme necessário.
+            intf.bus_req_is_wr = write_reg; 
+            intf.bus_addr      = addr_reg;  
+            intf.bus_wr_data   = wdata_reg;
+
+            if (write_reg) begin
+                intf.bus_wr_biten = 4'b1111; 
+            end else begin
+                intf.bus_wr_biten = 4'b0000; 
+            end
         end
     end
 
     //--------------------------------------------------------------------------
-    // Transaction Completion
+    // Completar transição 
     //--------------------------------------------------------------------------
     assign transaction_complete = (intf.bus_ready);
 
     //--------------------------------------------------------------------------
-    // APB Response Signals
+    // Sinais de resposta APB4
     //--------------------------------------------------------------------------
     assign s_apb4.pready  = (current_state == ACCESS) ? transaction_complete : 1'b0;
     assign s_apb4.prdata  = (current_state == ACCESS) ? intf.bus_rd_data : '0;
     assign s_apb4.pslverr = (current_state == ACCESS) ? intf.bus_err : 1'b0;
 
     //--------------------------------------------------------------------------
-    // Stall signals
+    // Sinais stall
     //--------------------------------------------------------------------------
     assign intf.bus_req_stall_wr = 1'b0;
     assign intf.bus_req_stall_rd = 1'b0;

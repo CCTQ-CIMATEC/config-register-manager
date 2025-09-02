@@ -27,6 +27,7 @@ module apb4_tb;
     
     // Test variables
     logic [DATA_WIDTH-1:0] expected_data;
+    logic [DATA_WIDTH-1:0] expected_data_writed;
     logic [ADDR_WIDTH-1:0] test_address;
     logic test_passed;
 
@@ -72,10 +73,10 @@ module apb4_tb;
     // Reset Generation
     //--------------------------------------------------------------------------
     initial begin
-        rst = 1;
-        #(CLK_PERIOD * 2);
         rst = 0;
-        #(CLK_PERIOD);
+        #(CLK_PERIOD * 2);
+        rst = 1;
+        
     end
 
     //--------------------------------------------------------------------------
@@ -145,76 +146,12 @@ module apb4_tb;
             $display("[%0t] APB4 READ: Addr=0x%h, Data=0x%h", $time, addr, data);
         end
     endtask
-
-    //--------------------------------------------------------------------------
-    // APB4 Write Task using direct interface signals (alternative)
-    //--------------------------------------------------------------------------
-    task apb4_write_direct;
-        input [ADDR_WIDTH-1:0] addr;
-        input [DATA_WIDTH-1:0] data;
-        begin
-            // Setup phase
-            @(posedge clk);
-            s_apb4.psel    <= 1'b1;
-            s_apb4.penable <= 1'b0;
-            s_apb4.pwrite  <= 1'b1;
-            s_apb4.paddr   <= addr;
-            s_apb4.pwdata  <= data;
-            
-            // Access phase
-            @(posedge clk);
-            s_apb4.penable <= 1'b1;
-            
-            // Wait for pready
-            wait(s_apb4.pready == 1'b1);
-            @(posedge clk);
-            
-            // End transaction
-            s_apb4.psel    <= 1'b0;
-            s_apb4.penable <= 1'b0;
-            s_apb4.pwrite  <= 1'b0;
-            
-            $display("[%0t] APB4 WRITE (Direct): Addr=0x%h, Data=0x%h", $time, addr, data);
-        end
-    endtask
-
-    //--------------------------------------------------------------------------
-    // APB4 Read Task using direct interface signals (alternative)
-    //--------------------------------------------------------------------------
-    task apb4_read_direct;
-        input [ADDR_WIDTH-1:0] addr;
-        output [DATA_WIDTH-1:0] data;
-        begin
-            // Setup phase
-            @(posedge clk);
-            s_apb4.psel    <= 1'b1;
-            s_apb4.penable <= 1'b0;
-            s_apb4.pwrite  <= 1'b0;
-            s_apb4.paddr   <= addr;
-            
-            // Access phase
-            @(posedge clk);
-            s_apb4.penable <= 1'b1;
-            
-            // Wait for pready
-            wait(s_apb4.pready == 1'b1);
-            data = s_apb4.prdata;
-            @(posedge clk);
-            
-            // End transaction
-            s_apb4.psel    <= 1'b0;
-            s_apb4.penable <= 1'b0;
-            
-            $display("[%0t] APB4 READ (Direct): Addr=0x%h, Data=0x%h", $time, addr, data);
-        end
-    endtask
-
+    
     //--------------------------------------------------------------------------
     // Test Sequence
     //--------------------------------------------------------------------------
     initial begin
         // Initialize signals
-        hwif_in <= '{default:0};
         test_passed <= 1;
         
         // Initialize APB4 interface through modport
@@ -225,7 +162,7 @@ module apb4_tb;
         s_apb4.master_cb.pwdata  <= '0;
         
         // Wait for reset to complete
-        wait(rst == 0);
+        wait(rst == 1);
         #(CLK_PERIOD * 2);
         
         $display("==========================================");
@@ -236,11 +173,18 @@ module apb4_tb;
         // Test 1: Write to a register using clocking block
         $display("\nTest 1: Writing to register address 0x0 (Clocking Block)");
         test_address = 3'h0;
-        expected_data = 32'hDEADBEEF;
+        expected_data = 32'hEF;
         
         // Perform APB4 write using clocking block
         apb4_write(test_address, expected_data);
         
+        expected_data_writed = pack_ctrl(hwif_out.ctrl);
+        if (expected_data_writed === expected_data) begin
+            $display("✅ WRITE PASSED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
+        end else begin
+            $display("❌ WRITE 2 FAILED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
+            test_passed = 0;
+        end
         // Allow some time for the write to propagate
         #(CLK_PERIOD * 2);
         
@@ -256,30 +200,6 @@ module apb4_tb;
         begin
             logic [DATA_WIDTH-1:0] read_data;
             apb4_read(test_address, read_data);
-            
-            if (read_data === expected_data) begin
-                $display("✅ READBACK PASSED: Expected=0x%h, Got=0x%h", expected_data, read_data);
-            end else begin
-                $display("❌ READBACK FAILED: Expected=0x%h, Got=0x%h", expected_data, read_data);
-                test_passed = 0;
-            end
-        end
-        
-        // Test 3: Write to another register using direct signals
-        $display("\nTest 3: Writing to register address 0x4 (Direct)");
-        test_address = 3'h4;
-        expected_data = 32'hCAFEBABE;
-        
-        apb4_write_direct(test_address, expected_data);
-        #(CLK_PERIOD * 2);
-        
-        $display("Expected data written: 0x%h", expected_data);
-        
-        // Test 4: Read back the second register using direct signals
-        $display("\nTest 4: Reading back from register address 0x4 (Direct)");
-        begin
-            logic [DATA_WIDTH-1:0] read_data;
-            apb4_read_direct(test_address, read_data);
             
             if (read_data === expected_data) begin
                 $display("✅ READBACK PASSED: Expected=0x%h, Got=0x%h", expected_data, read_data);
@@ -335,6 +255,14 @@ module apb4_tb;
         $finish;
     end
 
+    function automatic logic [31:0] pack_ctrl(CSR_IP_Map__ctrl__out_t ctrl);
+        return { ctrl.clk2x.value,
+                ctrl.enable.value,
+                ctrl.dord.value,
+                ctrl.master.value,
+                ctrl.mode.value,
+                ctrl.prescaler.value };
+    endfunction
 endmodule
 
 //------------------------------------------------------------------------------

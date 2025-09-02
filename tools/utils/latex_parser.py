@@ -29,7 +29,8 @@ def extract_table_with_label(latex_content: str, target_label: str) -> str | Non
 
     if match:
         return match.group(1)
-    return None
+
+    raise ValueError(f"Tabela com label '{target_label}' não encontrada no LaTeX.")
 
 def extract_references_from_table(table_content: str) -> list[str]:
     """
