@@ -13,6 +13,13 @@ module axi4lite_slave #(
     logic [DATA_WIDTH-1:0] write_data;
     logic [3:0] write_strobe;
     
+    typedef enum logic [1:0] {
+        OKAY   = 2'b00,
+        EXOKAY = 2'b01,  // ONLY AXI, NOT AXI4-Lite
+        SLVERR = 2'b10,
+        DECERR = 2'b11 
+    } resp_state_t;
+
     // State machines for read and write channels
     typedef enum logic [1:0] {
         READ_IDLE,
