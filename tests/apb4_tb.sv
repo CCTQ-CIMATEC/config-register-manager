@@ -11,8 +11,8 @@ module apb4_tb;
     // Parameters
     //--------------------------------------------------------------------------
     parameter DATA_WIDTH = 32;
-    parameter ADDR_WIDTH = 3;
-    parameter CSR_ADDR_WIDTH = 3;
+    parameter ADDR_WIDTH = 32;
+    parameter CSR_ADDR_WIDTH = 32;
     parameter CLK_PERIOD = 10; // 100 MHz
 
     //--------------------------------------------------------------------------
@@ -172,8 +172,8 @@ module apb4_tb;
         
         // Test 1: Write to a register using clocking block
         $display("\nTest 1: Writing to register address 0x0 (Clocking Block)");
-        test_address = 3'h0;
-        expected_data = 32'hEF;
+        test_address = 32'h40000000;
+        expected_data = 32'hef;
         
         // Perform APB4 write using clocking block
         apb4_write(test_address, expected_data);
@@ -185,8 +185,6 @@ module apb4_tb;
             $display("❌ WRITE 2 FAILED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
             test_passed = 0;
         end
-        // Allow some time for the write to propagate
-        #(CLK_PERIOD * 2);
         
         // Check hardware interface signals
         $display("Checking hardware interface signals...");
@@ -262,6 +260,13 @@ module apb4_tb;
                 ctrl.master.value,
                 ctrl.mode.value,
                 ctrl.prescaler.value };
+    endfunction
+
+    function automatic logic [31:0] pack_data(CSR_IP_Map__data__out_t data);
+        return { 
+            data.rdata.value,
+            8'b0
+        };
     endfunction
 endmodule
 
