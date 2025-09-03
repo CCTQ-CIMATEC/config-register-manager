@@ -120,7 +120,7 @@ if ! python3 tools/latex2csv.py; then
 fi
 
 echo "Etapa 2: Convertendo CSV para IP-XACT (BUS_WIDTH=${BUS_WIDTH})..."
-if ! python3 scripts/csv2ipxact.py -s "${BUS_WIDTH}"; then
+if ! python3 tools/csv2ipxact.py -s "${BUS_WIDTH}"; then
     error_exit "CSV para IP-XACT"
 fi
 
