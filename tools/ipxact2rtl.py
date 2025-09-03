@@ -159,7 +159,7 @@ def _extract_component_data(ipxact_data):
     max_size = max([info['size'] for info in registers.values()]) if registers else 32
     data_width = max_size - 1
     num_regs = len(registers)
-    addr_width = max(math.ceil(math.log2(num_regs)) - 1, 0) if num_regs > 1 else 0
+    addr_width = 32 #provavelmente tera um addr_width como parametro no futuro
     
     hw_input_regs = [r for r, info in registers.items() 
                     if any(needs_hw_input(f_info) for f_info in info['fields'].values())]
@@ -205,6 +205,16 @@ def _write_internal_signals(f, component_data):
     f.write("    assign intf.bus_rd_data = cpuif_rd_data;\n")
     f.write("    assign intf.bus_err = cpuif_rd_err | cpuif_wr_err;\n\n")
 
+def get_addr_register(component_data, reg_name):
+
+    base_addr = component_data['registers'][reg_name]['base_address']
+    offset    = component_data['registers'][reg_name]['offset']
+
+    base_int = int(base_addr, 16)
+    offset_int = int(offset, 16)
+    result = base_int + offset_int
+    return f"0x{result:08X}"
+
 def _write_address_decoding(f, component_data):
     """Escreve lógica de decodificação de endereço."""
     f.write("    typedef struct {\n")
@@ -222,7 +232,7 @@ def _write_address_decoding(f, component_data):
     reg_list = list(component_data['registers'].keys())
     for i, reg_name in enumerate(reg_list):
         if component_data['addr_width'] > 0:
-            f.write(f"        decoded_reg_strb.{reg_name} = (cpuif_addr == {component_data['addr_width']+1}'h{i:x});\n")
+            f.write(f"        decoded_reg_strb.{reg_name} = (cpuif_addr == 32'h{get_addr_register(component_data, reg_name)});\n")
         else:
             f.write(f"        decoded_reg_strb.{reg_name} = 1'b1;\n")
     f.write("    end\n\n")
@@ -317,6 +327,7 @@ def _write_field_sequential_logic(f, reg_name, field_info):
             f.write(f"            field_storage.{reg_name}.{field_info['field_name']}.value <= {format_reset_value(field_info['reset_value'], field_info['bit_width'])};\n")
         f.write("        end else begin\n")
         f.write(f"            if(field_combo.{reg_name}.{field_info['field_name']}.load_next) begin\n")
+        #f.write(f"$display(\"field_storage.{reg_name}.{field_info['field_name']}.value <= %h\",field_combo.{reg_name}.{field_info['field_name']}.next);\n")
         f.write(f"                field_storage.{reg_name}.{field_info['field_name']}.value <= field_combo.{reg_name}.{field_info['field_name']}.next;\n")
         f.write("            end\n")
         f.write("        end\n")
