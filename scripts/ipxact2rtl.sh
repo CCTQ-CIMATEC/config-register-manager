@@ -4,7 +4,7 @@
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 PROJECT_ROOT="$SCRIPT_DIR/.."
 
-INPUT_XML="$PROJECT_ROOT/build/csv/ipMap.xml"
+INPUT_XML="$PROJECT_ROOT/build/ipxact/ipMap.xml"
 OUTPUT_DIR="$PROJECT_ROOT/build/rtl"
 
 #Cria diretório de saída se não existir

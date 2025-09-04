@@ -92,8 +92,9 @@ def read_csv_data(csv_file):
 def convert_all_csv_to_ipxact(bus_size="32"):
     """Convert all CSV files to a single IP-XACT XML file"""
     
-    build_path = Path("build/csv")
-    csv_files = list(build_path.glob('RegisterMap_*.csv'))
+    build_path_csv    = Path("build/csv")
+    build_path_ipxact = Path("build/ipxact")
+    csv_files = list(build_path_csv.glob('RegisterMap_*.csv'))
 
     # Pura gambiarra para base_addresses
     base_addresses = {}
@@ -108,7 +109,7 @@ def convert_all_csv_to_ipxact(bus_size="32"):
     print(f" CSV: {csv_files} \n")
 
     if not csv_files:
-        print(f"No IPs specific CSV files found in directory: {build_path}")
+        print(f"No IPs specific CSV files found in directory: {build_path_csv}")
         return False
     
     print(f"Found {len(csv_files)} CSV files")
@@ -165,7 +166,8 @@ def convert_all_csv_to_ipxact(bus_size="32"):
             raise  # <-- interrupção imediata se CSV inválido
     
     # Write the combined XML file
-    output_file = build_path / "ipMap.xml"
+    output_file = build_path_ipxact / "ipMap.xml"
+
     try:
         # Pretty print the XML
         xml_str = ET.tostring(root, encoding='unicode')
