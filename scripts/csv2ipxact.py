@@ -3,7 +3,7 @@
 CSV to IP-XACT 2022 Converter
 Converts CSR register tables from CSV format to IP-XACT 2022 XML format
 """
-
+import sys
 import csv
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
@@ -11,7 +11,8 @@ import re
 import argparse
 from pathlib import Path
 
-from utils import IPXACT2022Generator
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from tools.utils import IPXACT2022Generator
 
 
 def read_csv_data(csv_file):
@@ -24,11 +25,11 @@ def read_csv_data(csv_file):
         "offset",
         "field",
         "bits",
-        "access_policy",
+        "access policy",
         "volatile",
         "reset",
         "description",
-        "enum_values"
+        "enum values"
     }
 
     # Valores permitidos para o campo access_policy (padrão IP-XACT)
@@ -65,7 +66,7 @@ def read_csv_data(csv_file):
                 }
 
             # Validação do access_policy
-            access_policy = row_data.get('access_policy', row_data.get('access policy', 'RW')).upper()
+            access_policy = row_data.get('Access_Policy', row_data.get('Access Policy', 'RW')).upper()
             if access_policy not in valid_access_policies:
                 raise ValueError(
                     f"CSV {csv_file}: AccessPolicy inválido '{access_policy}' "
