@@ -198,7 +198,7 @@ def _write_internal_signals(f, component_data):
     f.write("    logic cpuif_wr_ack;\n")
     f.write("    logic cpuif_wr_err;\n")
     f.write(f"    logic [{component_data['data_width']}:0] cpuif_rd_data;\n")
-    f.write(f"    logic [{component_data['addr_width']}:0] cpuif_addr;\n\n")
+    f.write(f"    logic [{component_data['addr_width']-1}:0] cpuif_addr;\n\n")
     
     f.write("    assign cpuif_addr = intf.bus_addr;\n")
     f.write("    assign intf.bus_ready = cpuif_rd_ack | cpuif_wr_ack;\n")
@@ -213,7 +213,7 @@ def get_addr_register(component_data, reg_name):
     base_int = int(base_addr, 16)
     offset_int = int(offset, 16)
     result = base_int + offset_int
-    return f"0x{result:08X}"
+    return f"{result:08X}"
 
 def _write_address_decoding(f, component_data):
     """Escreve lógica de decodificação de endereço."""

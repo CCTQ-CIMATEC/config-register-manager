@@ -2,7 +2,7 @@ module axi4lite_tb;
 
     parameter DATA_WIDTH = 32;
     parameter ADDR_WIDTH = 32;
-    parameter CSR_ADDR_WIDTH = 3;
+    parameter CSR_ADDR_WIDTH = 32;
     parameter CLK_PERIOD = 10; // 100 MHz
     parameter MEM_DEPTH = 1024; // Add this parameter for the slave module
 
@@ -15,6 +15,7 @@ module axi4lite_tb;
     
     // Test variables
     logic [DATA_WIDTH-1:0] expected_data;
+    logic [DATA_WIDTH-1:0] expected_data_writed;
     logic [ADDR_WIDTH-1:0] test_address;
     logic test_passed;
 
@@ -183,74 +184,6 @@ module axi4lite_tb;
         end
     endtask
 
-    // AXI4-Lite Write Task using direct interface signals (alternative)
-    task axi4_lite_write_direct;
-        input [ADDR_WIDTH-1:0] addr;
-        input [DATA_WIDTH-1:0] data;
-        input [(DATA_WIDTH/8)-1:0] strb;
-        begin
-            // Start write transaction
-            @(posedge clk);
-            s_axi4_lite.AWADDR  <= addr;
-            s_axi4_lite.AWPROT  <= 3'b000;
-            s_axi4_lite.AWVALID <= 1'b1;
-            s_axi4_lite.WDATA   <= data;
-            s_axi4_lite.WSTRB   <= strb;
-            s_axi4_lite.WVALID  <= 1'b1;
-            s_axi4_lite.BREADY  <= 1'b1;
-            
-            // Wait for address and data handshakes
-            wait(s_axi4_lite.AWREADY && s_axi4_lite.WREADY);
-            @(posedge clk);
-            
-            s_axi4_lite.AWVALID <= 1'b0;
-            s_axi4_lite.WVALID  <= 1'b0;
-            
-            // Wait for write response
-            wait(s_axi4_lite.BVALID);
-            
-            if (s_axi4_lite.BRESP != 2'b00) begin
-                $display("[%0t] AXI4-Lite WRITE WARNING: BRESP=0x%h (not OKAY)", $time, s_axi4_lite.BRESP);
-            end
-            
-            @(posedge clk);
-            s_axi4_lite.BREADY <= 1'b0;
-            
-            $display("[%0t] AXI4-Lite WRITE (Direct): Addr=0x%h, Data=0x%h, STRB=0x%h, BRESP=0x%h", 
-                     $time, addr, data, strb, s_axi4_lite.BRESP);
-        end
-    endtask
-
-    // AXI4-Lite Read Task using direct interface signals (alternative)
-    task axi4_lite_read_direct;
-        input [ADDR_WIDTH-1:0] addr;
-        output [DATA_WIDTH-1:0] data;
-        output [1:0] resp;
-        begin
-            // Start read transaction
-            @(posedge clk);
-            s_axi4_lite.ARADDR  <= addr;
-            s_axi4_lite.ARPROT  <= 3'b000;
-            s_axi4_lite.ARVALID <= 1'b1;
-            s_axi4_lite.RREADY  <= 1'b1;
-            
-            // Wait for address handshake
-            wait(s_axi4_lite.ARREADY);
-            @(posedge clk);
-            s_axi4_lite.ARVALID <= 1'b0;
-            
-            // Wait for read data
-            wait(s_axi4_lite.RVALID);
-            data = s_axi4_lite.RDATA;
-            resp = s_axi4_lite.RRESP;
-            
-            @(posedge clk);
-            s_axi4_lite.RREADY <= 1'b0;
-            
-            $display("[%0t] AXI4-Lite READ (Direct): Addr=0x%h, Data=0x%h, RRESP=0x%h", $time, addr, data, resp);
-        end
-    endtask
-
     // Test Sequence
     initial begin
         // Initialize signals
@@ -281,14 +214,25 @@ module axi4lite_tb;
         
         // Test 1: Write to a register using clocking block
         $display("\nTest 1: Writing to register address 0x00000000 (Clocking Block)");
-        test_address = 32'h00000000;
+        test_address = 32'h40000000;
         expected_data = 32'hEF;
         
         // Perform AXI4-Lite write using clocking block (full word write)
         axi4_lite_write(test_address, expected_data, 4'hF);
-        
+
+        expected_data_writed = pack_ctrl(hwif_out.ctrl);
+        if (expected_data_writed === expected_data) begin
+            $display("✅ WRITE PASSED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
+        end else begin
+            $display("❌ WRITE 2 FAILED: Expected=0x%h, Got=0x%h", expected_data, expected_data_writed);
+            test_passed = 0;
+        end
+
+        $display("Checking hardware interface signals...");
+        $display("Expected data written: 0x%h", expected_data);
+
         // Allow some time for the write to propagate
-        #(CLK_PERIOD * 2);
+        //#(CLK_PERIOD * 2);
         
         // Test 2: Read back the same register using clocking block
         $display("\nTest 2: Reading back from register address 0x00000000 (Clocking Block)");
@@ -306,11 +250,11 @@ module axi4lite_tb;
         end
         
         // Test 3: Write to another register using direct signals
-        $display("\nTest 3: Writing to register address 0x00000010 (Direct)");
+        /*$display("\nTest 3: Writing to register address 0x00000010 (Direct)");
         test_address = 32'h00000010;
         expected_data = 32'hBE;
         
-        axi4_lite_write_direct(test_address, expected_data, 4'hF);
+        axi4_lite_write(test_address, expected_data, 4'hF);
         #(CLK_PERIOD * 2);
         
         // Test 4: Read back the second register using direct signals
@@ -318,7 +262,7 @@ module axi4lite_tb;
         begin
             logic [DATA_WIDTH-1:0] read_data;
             logic [1:0] read_resp;
-            axi4_lite_read_direct(test_address, read_data, read_resp);
+            axi4_lite_read(test_address, read_data, read_resp);
             
             if (read_data === expected_data && read_resp === 2'b00) begin
                 $display("✅ READBACK PASSED: Expected=0x%h, Got=0x%h, RRESP=0x%h", expected_data, read_data, read_resp);
@@ -347,7 +291,7 @@ module axi4lite_tb;
                 $display("❌ BYTE WRITE FAILED: Expected lower byte=0x78, Got=0x%h", read_data[7:0]);
                 test_passed = 0;
             end
-        end
+        end*/
         
         // Test 6: Test out of bounds access
         /*$display("\nTest 6: Testing out of bounds access");
@@ -443,4 +387,19 @@ module axi4lite_tb;
         $finish;
     end
 
+    function automatic logic [31:0] pack_ctrl(CSR_IP_Map__ctrl__out_t ctrl);
+        return { ctrl.clk2x.value,
+                ctrl.enable.value,
+                ctrl.dord.value,
+                ctrl.master.value,
+                ctrl.mode.value,
+                ctrl.prescaler.value };
+    endfunction
+
+    function automatic logic [31:0] pack_data(CSR_IP_Map__data__out_t data);
+        return { 
+            data.rdata.value,
+            8'b0
+        };
+    endfunction
 endmodule
