@@ -1,6 +1,6 @@
 interface Bus2Master_intf #(
-    parameter logic ADDR_WIDTH = 32,
-    parameter logic DATA_WIDTH = 32
+    parameter ADDR_WIDTH = 32,
+    parameter DATA_WIDTH = 32
 ) (
     input logic ACLK,
     input logic ARESETN
@@ -64,7 +64,7 @@ interface Bus2Master_intf #(
     );
 
     // Modport for Slave
-    modport slave_ports (
+    modport slave (
         clocking slave_cb,
         input  ARADDR, ARPROT, ARVALID, RREADY,
         input  AWADDR, AWPROT, AWVALID,
@@ -75,13 +75,13 @@ interface Bus2Master_intf #(
     );
 
     // Modport for Passive Monitoring
-    modport monitor (
+    /*modport monitor (
         input ARADDR, ARPROT, ARVALID, ARREADY, RDATA, RRESP, RVALID, RREADY,
         input AWADDR, AWPROT, AWVALID, AWREADY,
         input WDATA, WSTRB, WVALID, WREADY,
         input BRESP, BVALID, BREADY,
         input ACLK, ARESETN
-    );
+    );*/
 
     /* Assertions for AXI4-Lite Protocol Checking
     property axi4_lite_ar_handshake;
@@ -167,7 +167,7 @@ interface Bus2Master_intf #(
     */
 
     // Reset Behavior
-    always @(negedge ARESETN) begin
+    /*always @(negedge ARESETN) begin
         if (!ARESETN) begin
             ARADDR  <= '0;
             ARPROT  <= '0;
@@ -189,9 +189,9 @@ interface Bus2Master_intf #(
             BRESP   <= 2'b00;
             BVALID  <= 1'b0;
         end
-    end
+    end*/
 
-    // Utility Functions
+    /* Utility Functions
     function string get_read_state();
         if (ARVALID && !ARREADY) return "AR_WAIT";
         if (ARVALID && ARREADY) return "AR_HANDSHAKE";
@@ -218,7 +218,7 @@ interface Bus2Master_intf #(
         $display("[%0t] AXI4-Lite WRITE - State: %s, AWADDR: 0x%h, WDATA: 0x%h, WSTRB: %b, BRESP: %b",
                  $time, get_write_state(), AWADDR, WDATA, WSTRB, BRESP);
     endfunction
-
+    */
     // Initialization (uncomment if coverage is enabled)
 
     /*

@@ -106,9 +106,9 @@ module apb4_slave #(
             intf.bus_wr_data   = wdata_reg;
 
             if (write_reg) begin
-                intf.bus_wr_biten = 4'b1111; 
+                intf.bus_wr_biten = 32'hFFFFFFFF;
             end else begin
-                intf.bus_wr_biten = 4'b0000; 
+                intf.bus_wr_biten = 32'b0; 
             end
         end
     end

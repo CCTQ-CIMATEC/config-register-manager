@@ -1,59 +1,54 @@
-interface axi_lite #(
-    parameter DATA_WIDTH = 31,
-    parameter ADDR_WIDTH = 31
+interface Bus2Reg_intf #(
+    parameter DATA_WIDTH = 32,
+    parameter ADDR_WIDTH = 32
 ) (
-    input logic ACLK,
-    input logic ARESETN
+    input logic clk,
+    input logic rst
 );
     
-    // Read Address Channel - AR
-    logic [ADDR_WIDTH:0]    ARADDR;
-    logic [3:0]             ARCACHE;
-    logic [2:0]             ARPROT;
-    logic                   ARVALID;
-    logic                   ARREADY;
+   logic                    bus_req;
+   logic                    bus_req_is_wr;
+   logic [ADDR_WIDTH-1:0]   bus_addr;
+   logic [DATA_WIDTH-1:0]   bus_wr_data;
+   logic [DATA_WIDTH-1:0]   bus_wr_biten;
+   logic                    bus_req_stall_wr;
+   logic                    bus_req_stall_rd;
+   logic                    bus_err;
 
-    //Read Data Channel - R
-    logic [DATA_WIDTH:0]    RDATA;
-    logic [1:0]             RRESP;
-    logic                   RVALID;
-    logic                   RREADY;
+   logic                    bus_ready;
+   logic [DATA_WIDTH-1:0]   bus_rd_data;
+   
+   modport BUS (
+       input  clk,
+       input  rst,
 
-    //Write Address Channel - AW
-    logic [ADDR_WIDTH:0]    AWADDR;
-    logic [3:0]             AWCACHE;
-    logic [2:0]             AWPROT;
-    logic                   AWVALID;
-    logic                   AWREADY;
+       input  bus_ready,
+       input  bus_rd_data,
+       input  bus_err,
 
-    //Write Data Channel - W
-    logic [DATA_WIDTH]      WDATA;
-    logic [3:0]             WSTRB;
-    logic                   WVALID;
-    logic                   WREADY;
+       output bus_req,
+       output bus_req_is_wr,
+       output bus_addr,
+       output bus_wr_data,
+       output bus_wr_biten,
+       output bus_req_stall_wr,
+       output bus_req_stall_rd
+   );
 
-    //Write Response Channel - B
-    logic [1:0]             BRESP;
-    logic                   BVALID;
-    logic                   BREADY;
+   modport REG_MAP (
+       input  clk,
+       input  rst,
 
-    modport master_ports (
-        input ACLK, ARESETN,
-        input ARREADY, RDATA, RRESP, RVALID,
-        input AWREADY, WREADY, BRESP, BVALID,
-        output ARADDR, ARCACHE, ARPROT, ARVALID, RREADY,
-        output AWADDR, AWCACHE, AWPROT, AWVALID,
-        output WDATA, WSTRB, WVALID, BREADY
-    );
+       input  bus_req,
+       input  bus_req_is_wr,
+       input  bus_addr,
+       input  bus_wr_data,
+       input  bus_wr_biten,
 
-    modport slave_ports (
-        input ACLK, ARESETN,
-        input ARADDR, ARCACHE, ARPROT, ARVALID, RREADY,
-        input AWADDR, AWCACHE, AWPROT, AWVALID,
-        input WDATA, WSTRB, WVALID, BREADY,
-        output ARREADY, RDATA, RRESP, RVALID,
-        output AWREADY, WREADY, BRESP, BVALID
-    );
+       output bus_ready,
+       output bus_rd_data,
+       output bus_err
+   );
 
 
-endinterface //axi4_lite
+endinterface

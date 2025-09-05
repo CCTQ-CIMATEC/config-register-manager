@@ -13,7 +13,7 @@ interface Bus2Reg_intf
    logic [ADDR_WIDTH-1:0] bus_addr;
    logic [DATA_WIDTH-1:0] bus_wr_data;
    // CORREÇÃO: bus_wr_biten deve ser byte enable (4 bits para 32-bit data)
-   logic [DATA_WIDTH/8-1:0] bus_wr_biten;  
+   logic [DATA_WIDTH-1:0] bus_wr_biten;  
    logic bus_req_stall_wr;
    logic bus_req_stall_rd;
 
@@ -74,6 +74,7 @@ interface Bus2Reg_intf
             $display("   RD_DATA  = 0x%h", bus_rd_data);
             $display("   READY    = %0b", bus_ready);
             $display("   ERR      = %0b", bus_err);
+            $display("   RST      = %0b", rst);
         end
     endfunction
 endinterface

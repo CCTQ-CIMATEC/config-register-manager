@@ -31,14 +31,14 @@ def parse_ipxact(input_xml):
 
         for addr_block in component.findall('.//ipxact:addressBlock', NS):
             base_address = addr_block.find('ipxact:baseAddress', NS)
-            base_addr = int(base_address.text, 0) if base_address is not None else 0
-            
+
             for reg in addr_block.findall('ipxact:register', NS):
                 reg_info = ipxact2rtl.parse_register_ipxact(reg, NS, enum_cache, enum_definitions)
                 registers[reg_info['reg_name']] =  {
                     'offset': reg_info['offset'],
                     'size': reg_info['size'],
-                    'fields': reg_info['fields']
+                    'fields': reg_info['fields'],
+                    'base_address': base_address.text
                 }
                 
                 
