@@ -12,14 +12,14 @@ import argparse
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from tools.utils import IPXACT2022Generator
+from tools.ipxact_builder import IPXACT2022Generator
 
 
 def read_csv_data(csv_file):
     """Read CSV data, validate structure and return structured data"""
     registers_data = {}
 
-    # Definição das colunas obrigatórias (esperadas no CSV)
+    # Definition of required columns (expected in the CSV)
     expected_columns = {
         "register",
         "offset",
@@ -32,25 +32,25 @@ def read_csv_data(csv_file):
         "enum values"
     }
 
-    # Valores permitidos para o campo access_policy (padrão IP-XACT)
+    # Allowed values for the access_policy field (IP-XACT standard)
     valid_access_policies = {"RW", "RO", "WO", "W1C", "W0C", "RC"}
 
     with open(csv_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
 
         if not reader.fieldnames:
-            raise ValueError(f"Arquivo CSV {csv_file} não contém cabeçalho.")
+            raise ValueError(f"CSV file {csv_file} does not contain a header.")
 
-        # Normaliza nomes de colunas para minúsculo
+        # Normalize column names to lowercase
         fieldnames = {name.lower().strip() for name in reader.fieldnames}
 
-        # Valida colunas
+        # Validate missing or extra columns
         missing = expected_columns - fieldnames
         extra = fieldnames - expected_columns
         if missing:
-            raise ValueError(f"CSV {csv_file} está faltando colunas obrigatórias: {missing}")
+            raise ValueError(f"CSV {csv_file} is missing required columns: {missing}")
         if extra:
-            raise ValueError(f"CSV {csv_file} contém colunas inesperadas: {extra}")
+            raise ValueError(f"CSV {csv_file} contains unexpected columns: {extra}")
 
         for row in reader:
             row_data = {k.lower().strip(): v.strip() for k, v in row.items()}
@@ -65,15 +65,15 @@ def read_csv_data(csv_file):
                     'fields': []
                 }
 
-            # Validação do access_policy
+            # Validation of access_policy
             access_policy = row_data.get('Access_Policy', row_data.get('Access Policy', 'RW')).upper()
             if access_policy not in valid_access_policies:
                 raise ValueError(
-                    f"CSV {csv_file}: AccessPolicy inválido '{access_policy}' "
-                    f"para register '{register}', esperado um de {valid_access_policies}"
+                    f"CSV {csv_file}: Invalid AccessPolicy '{access_policy}' "
+                    f"for register '{register}', expected one of {valid_access_policies}"
                 )
 
-            # Monta campo
+            # Build field
             field_data = {
                 'field': row_data.get('field', '').lower(),
                 'bits': row_data.get('bits', ''),
@@ -132,7 +132,7 @@ def convert_all_csv_to_ipxact(bus_size="32"):
         print(f"Processing {csv_file.name}...")
         
         try:
-            # Read CSV data (com validações)
+            # Read CSV data
             registers_data = read_csv_data(csv_file)
             print(f"  Found {len(registers_data)} registers")
             
@@ -162,7 +162,7 @@ def convert_all_csv_to_ipxact(bus_size="32"):
             
         except ValueError as e:
             print(f"Error processing {csv_file.name}: {e}")
-            raise  # <-- interrupção imediata se CSV inválido
+            raise  # <-- immediate interruption if CSV is invalid
     
     # Write the combined XML file
     output_file = build_path_ipxact / "ipMap.xml"
@@ -197,7 +197,7 @@ def main():
     try:
         convert_all_csv_to_ipxact(args.bus_size)
     except ValueError as e:
-        print("\n❌ Conversão nao finalizada: erro na geração do CSV.")
+        print("\n❌ Conversion not completed: error during CSV generation.")
         print(e)
 
 

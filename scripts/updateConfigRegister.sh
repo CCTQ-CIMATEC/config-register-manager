@@ -8,6 +8,9 @@ BUILD_DIR="build"
 CLEAN_FLAG=false
 VIVADO_PARMS="--R"
 
+INPUT_XML="../build/ipxact/ipMap.xml"
+OUTPUT_DIR="../build/rtl"
+
 # help function
 show_help() {
     echo "Use: $0 [Options]"
@@ -115,7 +118,7 @@ done
 echo "🔄 Starting LaTeX -> RTL translation pipeline"
 
 echo "Step 1: Converting LaTeX to CSV..."
-if ! python3 tools/latex2csv.py; then
+if ! python3 scripts/latex2csv.py; then
     error_exit "LaTeX to CSV"
 fi
 
@@ -125,7 +128,7 @@ if ! python3 scripts/csv2ipxact.py -s "${BUS_WIDTH}"; then
 fi
 
 echo "Step 3: Generating RTL from IP-XACT..."
-if ! bash scripts/ipxact2rtl.sh; then
+if ! python3 "scripts/ipxact2rtl.py" "$INPUT_XML" "$OUTPUT_DIR"; then
     error_exit "IP-XACT to RTL"
 fi
 
