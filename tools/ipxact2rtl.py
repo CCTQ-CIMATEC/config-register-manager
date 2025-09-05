@@ -1,9 +1,8 @@
 from datetime import datetime
-import math
 from pathlib import Path
 
 def get_absolute_path(relative_path):
-    """Converte caminhos relativos em absolutos baseado na localização do script."""
+    """Converts relative paths into absolute paths based on the script's location."""
     script_dir = Path(__file__).parent
     return (script_dir / relative_path).resolve()
 
@@ -31,11 +30,11 @@ def parse_register_ipxact(reg, NS, enum_cache, enum_definitions):
     offset = reg.find('ipxact:addressOffset', NS).text
     size = int(reg.find('ipxact:size', NS).text) if reg.find('ipxact:size', NS) is not None else 32
 
-    # Calcula endereço absoluto e índice
+    # Calculate absolute address and index
     abs_offset = int(offset, 0)
-    reg_index = abs_offset // (size // 8)  # alinhamento por palavra (bytes)
+    reg_index = abs_offset // (size // 8)  # word alignment (bytes)
 
-    # Campos do registrador
+    # Register fields
     fields = {}
     for field in reg.findall('ipxact:field', NS):
         field_info = parse_field_ipxact(field, NS, reg_name, enum_cache, enum_definitions)
@@ -127,7 +126,7 @@ def parse_field_ipxact(field, NS, reg_name, enum_cache, enum_definitions):
     }
 
 def parse_enumerated_values(field, NS):
-    """Extrai valores enumerados de um campo."""
+    """Extract Enums from a field"""
     enum_values = {}
     for enum in field.findall('ipxact:enumeratedValues/ipxact:enumeratedValue', NS):
         name_elem = enum.find('ipxact:name', NS)
@@ -137,29 +136,29 @@ def parse_enumerated_values(field, NS):
     return enum_values if enum_values else None
 
 def needs_hw_input(field_info):
-    """Verifica se o campo precisa de entrada de hardware"""
+    """Verify if a field need a hardware input"""
     return (field_info['volatile'] or 
             field_info['access'] == 'read-only' or
             'master mode will be cleared' in field_info.get('description', '').lower())
 
 def _setup_output_file(ipxact_data, output_dir):
-    """Configura o arquivo de saída."""
+    """save output file"""
     output_path = get_absolute_path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     return output_path / f"{ipxact_data['name']}.sv"
 
 def _extract_component_data(ipxact_data):
-    """Extrai e calcula dados do componente."""
+    """Extract component data."""
     component_name = ipxact_data['name']
     registers = ipxact_data['registers']
     enums = ipxact_data.get('enums', {})
     address_info = ipxact_data.get('address_info', {})
     
-    # Calcula larguras
+    # calcule width
     max_size = max([info['size'] for info in registers.values()]) if registers else 32
     data_width = max_size - 1
     num_regs = len(registers)
-    addr_width = 32 #provavelmente tera um addr_width como parametro no futuro
+    addr_width = 32 # will probably have an addr_width as a parameter in the future
     
     hw_input_regs = [r for r, info in registers.items() 
                     if any(needs_hw_input(f_info) for f_info in info['fields'].values())]
@@ -176,13 +175,13 @@ def _extract_component_data(ipxact_data):
     }
 
 def _write_module_header(f, component_data):
-    """Escreve o cabeçalho do módulo."""
+    """write module header."""
     f.write(f"// Módulo {component_data['name']} - Gerado automaticamente em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     f.write("// Módulo CSR completo\n\n")
     f.write(f"import {component_data['name']}_pkg::*;\n\n")
 
 def _write_module_interface(f, component_data):
-    """Escreve a interface do módulo."""
+    """write module interface."""
     f.write(f"module {component_data['name']} (\n")
     f.write("     Bus2Reg_intf intf,\n\n")
     
@@ -192,7 +191,7 @@ def _write_module_interface(f, component_data):
     f.write(");\n\n")
 
 def _write_internal_signals(f, component_data):
-    """Escreve sinais internos e mapeamentos."""
+    """write internal signals."""
     f.write("    logic cpuif_rd_ack;\n")
     f.write("    logic cpuif_rd_err;\n")
     f.write("    logic cpuif_wr_ack;\n")
@@ -216,7 +215,7 @@ def get_addr_register(component_data, reg_name):
     return f"{result:08X}"
 
 def _write_address_decoding(f, component_data):
-    """Escreve lógica de decodificação de endereço."""
+    """write address decode logic."""
     f.write("    typedef struct {\n")
     for reg_name in component_data['registers'].keys():
         f.write(f"        logic {reg_name};\n")
@@ -243,7 +242,7 @@ def _write_address_decoding(f, component_data):
     f.write(f"    assign decoded_wr_biten = intf.bus_wr_biten;\n\n")
 
 def _write_field_structures(f, component_data):
-    """Escreve estruturas de campo combinacional e storage."""
+    """write field comb and storage logic."""
     f.write("    //--------------------------------------------------------------------------\n")
     f.write("    // Field logic\n")
     f.write("    //--------------------------------------------------------------------------\n")
@@ -286,10 +285,10 @@ def _write_field_structures(f, component_data):
     f.write("    field_storage_t field_storage;\n\n")
 
 def _write_single_field_logic(f, component_name, reg_name, field_info):
-    """Escreve lógica para um único campo."""
+    """Write logic to a single field."""
     f.write(f"    // Field: {component_name}.{reg_name}.{field_info['field_name']}\n")
     
-    # Lógica combinacional
+    # Combinational logic
     bit_range = f"[{field_info['bit_width']-1}:0]" if field_info['bit_width'] > 1 and not field_info['enum'] else ""
     bit_select = _get_bit_select(field_info)
     
@@ -310,14 +309,14 @@ def _write_single_field_logic(f, component_name, reg_name, field_info):
     
     _write_field_sequential_logic(f, reg_name, field_info)
     
-    # Assignment de saída
+    # output Assignment
     if field_info['access'] != 'write-only':
         f.write(f"    assign hwif_out.{reg_name}.{field_info['field_name']}.value = field_storage.{reg_name}.{field_info['field_name']}.value;\n")
     
     f.write("\n")
 
 def _write_field_sequential_logic(f, reg_name, field_info):
-    """Escreve lógica sequencial para um campo."""
+    """Write sequential logic to a single field."""
     f.write("    always_ff @(posedge intf.clk or negedge intf.rst) begin\n")
     if field_info['access'] != 'write-only':
         f.write("        if(!intf.rst) begin\n")
@@ -338,7 +337,7 @@ def _write_field_sequential_logic(f, reg_name, field_info):
     f.write("    end\n")
 
 def _write_write_response(f):
-    """Escreve lógica de resposta de escrita."""
+    """write response logic."""
     f.write("    //--------------------------------------------------------------------------\n")
     f.write("    // Write response\n")
     f.write("    //--------------------------------------------------------------------------\n")
@@ -347,7 +346,7 @@ def _write_write_response(f):
     f.write("    assign cpuif_wr_err = '0;\n\n")
 
 def _write_readback_logic(f, component_data):
-    """Escreve lógica de readback."""
+    """write readback logic."""
     f.write("    //--------------------------------------------------------------------------\n")
     f.write("    // Readback\n")
     f.write("    //--------------------------------------------------------------------------\n\n")
@@ -376,7 +375,7 @@ def _write_readback_logic(f, component_data):
     f.write("    assign cpuif_rd_err = readback_err;\n\n")
 
 def _write_field_write_logic(f, reg_name, field_info, bit_select):
-    """Escreve lógica de escrita para um campo."""
+    """Implements the write logic for a field."""
     # Software write
     if field_info['access'] in ['read-write', 'write-only']:
         f.write(f"        if(decoded_reg_strb.{reg_name} && decoded_req_is_wr) begin // SW write\n")
@@ -403,7 +402,7 @@ def _write_field_write_logic(f, reg_name, field_info, bit_select):
         f.write("\n")
 
 def _write_readback_array(f, component_data):
-    """Escreve assignments do array de readback."""
+    """Implements assignments of readback array."""
     reg_idx = 0
     for reg_name, reg_info in component_data['registers'].items():
         f.write(f"    assign readback_array[{reg_idx}] = '0;\n")
@@ -420,7 +419,7 @@ def _write_readback_array(f, component_data):
         reg_idx += 1
 
 def format_reset_value(reset_value, bit_width):
-    """Formata o valor de reset com a largura correta"""
+    """Formats the reset value with the correct width"""
     if reset_value.startswith("'h"):
         return f"{bit_width}'h{reset_value[2:]}"
     elif reset_value.startswith("0x"):
@@ -432,26 +431,26 @@ def format_reset_value(reset_value, bit_width):
     return f"{bit_width}'h0"
 
 def _get_bit_select(field_info):
-    """Retorna a string de seleção de bits apropriada."""
+    """Returns the appropriate bit selection string."""
     if field_info['bit_width'] > 1:
         return f"[{field_info['bit_offset']+field_info['bit_width']-1}:{field_info['bit_offset']}]"
     else:
         return f"[{field_info['bit_offset']}]"
     
 def _setup_package_output_file(ipxact_data, output_dir):
-    """Configura o arquivo de saída do package."""
+    """Configures the package output file."""
     output_path = get_absolute_path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     return output_path / f"{ipxact_data['name']}_pkg.sv"
 
 
 def _extract_package_data(ipxact_data):
-    """Extrai dados necessários para gerar o package."""
+    """Extracts data required to generate the package."""
     component_name = ipxact_data['name']
     registers = ipxact_data['registers']
     enums = ipxact_data.get('enums', {})
     
-    # Identifica registradores com campos de entrada HW
+    # Identifies registers with HW input fields
     hw_input_regs = [
         reg_name for reg_name, reg_info in registers.items()
         if any(needs_hw_input(f_info) for f_info in reg_info['fields'].values())
@@ -466,13 +465,13 @@ def _extract_package_data(ipxact_data):
 
 
 def _write_package_header(f, component_data):
-    """Escreve o cabeçalho do package."""
-    f.write(f"// Package {component_data['name']}_pkg - Gerado automaticamente em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    f.write("// Estruturas typedef para interface CSR\n\n")
+    """Writes the package header."""
+    f.write(f"// Package {component_data['name']}_pkg - Automatically generated in {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    f.write("// Typedef structures for CSR interface\n\n")
     f.write(f"package {component_data['name']}_pkg;\n\n")
 
 def _write_single_enum(f, enum_name, enum_values):
-    """Escreve uma única definição de enum."""
+    """Writes a single enum definition."""
     enum_size = max(len(bin(len(enum_values))) - 3, 1)
     f.write(f"    typedef enum logic [{enum_size}:0] {{\n")
     
@@ -487,9 +486,9 @@ def _write_single_enum(f, enum_name, enum_values):
     f.write(f"    }} {enum_name};\n\n")
 
 def _write_input_structures(f, component_data):
-    """Escreve estruturas de entrada (hardware -> registrador)."""
+    """Writes input structures (hardware -> register)."""
     f.write("    // Input structures (Hardware -> Register)\n")
-    # Structs para campos individuais que precisam de entrada HW
+    # Structs for individual fields that require HW input
     for reg_name, reg_info in component_data['registers'].items():
         for field_name, field_info in reg_info['fields'].items():
             if needs_hw_input(field_info):
@@ -505,7 +504,7 @@ def _write_input_structures(f, component_data):
                 f.write(f"        logic we;\n")
                 f.write(f"    }} {component_data['name']}__{reg_name}__{field_name}__in_t;\n\n")
     
-    # Structs para registradores com entrada HW
+    # Structs for register with HW input
     for reg_name, reg_info in component_data['registers'].items():
         hw_input_fields = [f for f, info in reg_info['fields'].items() if needs_hw_input(info)]
         if hw_input_fields:
@@ -514,7 +513,7 @@ def _write_input_structures(f, component_data):
                 f.write(f"        {component_data['name']}__{reg_name}__{field_name}__in_t {field_name};\n")
             f.write(f"    }} {component_data['name']}__{reg_name}__in_t;\n\n")
     
-    # Struct principal de entrada
+    # Struct main input
     hw_input_regs = [r for r, info in component_data['registers'].items() 
                     if any(needs_hw_input(f_info) for f_info in info['fields'].values())]
     if hw_input_regs:
@@ -524,9 +523,9 @@ def _write_input_structures(f, component_data):
         f.write(f"    }} {component_data['name']}__in_t;\n\n")
 
 def _write_output_structures(f, component_data):
-    """Escreve estruturas de saída (registrador -> hardware)."""
+    """Writes output structures (hardware -> register)."""
     f.write("    // Output structures (Register -> Hardware)\n")
-    # Structs para campos individuais
+    # Structs for individual fields output
     for reg_name, reg_info in component_data['registers'].items():
         for field_name, field_info in reg_info['fields'].items():
             if field_info['access'] != 'write-only':
@@ -539,7 +538,7 @@ def _write_output_structures(f, component_data):
                     f.write(f"        logic value;\n")
                 f.write(f"    }} {component_data['name']}__{reg_name}__{field_name}__out_t;\n\n")
     
-    # Structs para registradores
+    # Structs for registers
     for reg_name, reg_info in component_data['registers'].items():
         output_fields = [f for f, info in reg_info['fields'].items() if info['access'] != 'write-only']
         if output_fields:
@@ -548,7 +547,7 @@ def _write_output_structures(f, component_data):
                 f.write(f"        {component_data['name']}__{reg_name}__{field_name}__out_t {field_name};\n")
             f.write(f"    }} {component_data['name']}__{reg_name}__out_t;\n\n")
     
-    # Struct principal de saída
+    # Struct for main output
     f.write(f"    typedef struct {{\n")
     for reg_name in component_data['registers'].keys():
         f.write(f"        {component_data['name']}__{reg_name}__out_t {reg_name};\n")

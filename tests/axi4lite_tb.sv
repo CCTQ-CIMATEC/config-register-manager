@@ -61,24 +61,24 @@ module axi4lite_tb;
     // AXI4-Lite Write Task using interface clocking block
     task axi4_lite_write;
 
-            /*
+        /*
             
-            1. O Mestre coloca um endereço no canal de Write Address e os dados no canal de Write Data. 
-            Ao mesmo tempo, ele aciona AWVALID e WVALID, indicando que o endereço e os dados nos respectivos canais são válidos. 
-            BREADY também é acionado pelo Mestre, indicando que ele está pronto para receber uma resposta.
+        1. The Master places an address on the Write Address channel and the data on the Write Data channel. 
+        At the same time, it asserts AWVALID and WVALID, indicating that the address and data on their respective channels are valid. 
+        BREADY is also asserted by the Master, indicating that it is ready to receive a response.
 
-            2. O Escravo aciona AWREADY e WREADY nos canais de Write Address e Write Data, respectivamente.
+        2. The Slave asserts AWREADY and WREADY on the Write Address and Write Data channels, respectively.
 
-            3. Como os sinais Valid e Ready estão presentes em ambos os canais (Write Address e Write Data), 
-            ocorre o handshake nesses canais, e os sinais Valid e Ready associados podem ser desativados. 
-            (Após ambos os handshakes, o escravo já possui o endereço e os dados da escrita).
+        3. Since the Valid and Ready signals are present on both channels (Write Address and Write Data), 
+        a handshake occurs on these channels, and the associated Valid and Ready signals can be deasserted. 
+        (After both handshakes, the slave already has the write address and data).
 
-            4. O Escravo então aciona BVALID, indicando que há uma resposta válida no canal de Write Response 
-            (neste caso, a resposta é 2’b00, que corresponde a ‘OKAY’).
+        4. The Slave then asserts BVALID, indicating that there is a valid response on the Write Response channel 
+        (in this case, the response is 2’b00, which corresponds to ‘OKAY’).
 
-            5. Na próxima borda de subida do clock, a transação é concluída, com os sinais Ready e Valid altos no canal de resposta de escrita.
+        5. On the next rising clock edge, the transaction is completed, with both Ready and Valid signals high on the Write Response channel.
             
-            */    
+        */
 
         input [ADDR_WIDTH-1:0] addr;
         input [DATA_WIDTH-1:0] data;
@@ -134,18 +134,23 @@ module axi4lite_tb;
     // AXI4-Lite Read Task using interface clocking block
     task axi4_lite_read;
 
-    /*1.O Mestre coloca um endereço no canal de Read Address e aciona ARVALID, 
-    indicando que o endereço é válido, além de acionar RREADY, indicando que está pronto para receber dados do Escravo.
+    /*  
+    1. The Master places an address on the Read Address channel and asserts ARVALID, 
+       indicating that the address is valid. It also asserts RREADY, indicating that it is ready to receive data from the Slave.
 
-    2. O Escravo aciona ARREADY, indicando que está pronto para receber o endereço no barramento.
+    2. The Slave asserts ARREADY, indicating that it is ready to accept the address on the bus.
 
-    3. Como ARVALID e ARREADY estão acionados, na próxima borda de subida do clock ocorre o handshake. 
-    Após isso, o Mestre e o Escravo desativam ARVALID e ARREADY, respectivamente. (Neste ponto, o Escravo já recebeu o endereço solicitado).
+    3. Since ARVALID and ARREADY are asserted, a handshake occurs on the next rising clock edge. 
+       After that, the Master and Slave deassert ARVALID and ARREADY, respectively. 
+       (At this point, the Slave has already received the requested address).
 
-    4. O Escravo coloca os dados solicitados no canal de Read Data e aciona RVALID, indicando que os dados no canal são válidos. 
-    O Escravo também pode colocar uma resposta em RRESP, embora isso não ocorra neste caso.
+    4. The Slave places the requested data on the Read Data channel and asserts RVALID, 
+       indicating that the data on the channel is valid. 
+       The Slave may also place a response on RRESP, although this does not occur in this case.
 
-    5.Como RREADY e RVALID estão acionados, a próxima borda de subida do clock conclui a transação. RREADY e RVALID podem então ser desativados.*/
+    5. Since RREADY and RVALID are asserted, the next rising clock edge completes the transaction. 
+       RREADY and RVALID can then be deasserted.
+    */
 
         input [ADDR_WIDTH-1:0] addr;
         output [DATA_WIDTH-1:0] data;
@@ -248,67 +253,6 @@ module axi4lite_tb;
                 test_passed = 0;
             end
         end
-        
-        // Test 3: Write to another register using direct signals
-        /*$display("\nTest 3: Writing to register address 0x00000010 (Direct)");
-        test_address = 32'h00000010;
-        expected_data = 32'hBE;
-        
-        axi4_lite_write(test_address, expected_data, 4'hF);
-        #(CLK_PERIOD * 2);
-        
-        // Test 4: Read back the second register using direct signals
-        $display("\nTest 4: Reading back from register address 0x00000010 (Direct)");
-        begin
-            logic [DATA_WIDTH-1:0] read_data;
-            logic [1:0] read_resp;
-            axi4_lite_read(test_address, read_data, read_resp);
-            
-            if (read_data === expected_data && read_resp === 2'b00) begin
-                $display("✅ READBACK PASSED: Expected=0x%h, Got=0x%h, RRESP=0x%h", expected_data, read_data, read_resp);
-            end else begin
-                $display("❌ READBACK FAILED: Expected=0x%h, Got=0x%h, RRESP=0x%h", expected_data, read_data, read_resp);
-                test_passed = 0;
-            end
-        end
-        
-        // Test 5: Test byte writes using WSTRB
-        $display("\nTest 5: Testing byte writes with WSTRB");
-        test_address = 32'h00000020;
-        
-        // Write only lower byte
-        axi4_lite_write(test_address, 32'h12345678, 4'h1);
-        #(CLK_PERIOD * 2);
-        
-        begin
-            logic [DATA_WIDTH-1:0] read_data;
-            logic [1:0] read_resp;
-            axi4_lite_read(test_address, read_data, read_resp);
-            
-            if (read_data[7:0] === 8'h78 && read_resp === 2'b00) begin
-                $display("✅ BYTE WRITE PASSED: Lower byte=0x%h", read_data[7:0]);
-            end else begin
-                $display("❌ BYTE WRITE FAILED: Expected lower byte=0x78, Got=0x%h", read_data[7:0]);
-                test_passed = 0;
-            end
-        end*/
-        
-        // Test 6: Test out of bounds access
-        /*$display("\nTest 6: Testing out of bounds access");
-        test_address = 32'hFFFFFFFC; // Very high address
-        
-        begin
-            logic [DATA_WIDTH-1:0] read_data;
-            logic [1:0] read_resp;
-            axi4_lite_read(test_address, read_data, read_resp);
-            
-            if (read_resp === 2'b10) begin // SLVERR expected
-                $display("✅ OUT OF BOUNDS READ PASSED: Got SLVERR (0x%h)", read_resp);
-            end else begin
-                $display("❌ OUT OF BOUNDS READ FAILED: Expected SLVERR, Got=0x%h", read_resp);
-                test_passed = 0;
-            end
-        end */
         
         // Summary
         $display("\n==========================================");

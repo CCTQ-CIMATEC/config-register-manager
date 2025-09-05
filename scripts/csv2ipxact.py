@@ -96,7 +96,6 @@ def convert_all_csv_to_ipxact(bus_size="32"):
     build_path_ipxact = Path("build/ipxact")
     csv_files = list(build_path_csv.glob('RegisterMap_*.csv'))
 
-    # Pura gambiarra para base_addresses
     base_addresses = {}
     with open ("build/csv/table_main.csv", mode="r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)

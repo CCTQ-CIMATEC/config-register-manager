@@ -2,9 +2,7 @@
 Gerador de RTL para módulo APB4 CSR Top
 Autor: Script Python para geração automatizada
 """
- 
-import os
-import shutil
+
 import argparse
 from pathlib import Path
  

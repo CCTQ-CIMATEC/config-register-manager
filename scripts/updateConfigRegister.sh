@@ -8,43 +8,43 @@ BUILD_DIR="build"
 CLEAN_FLAG=false
 VIVADO_PARMS="--R"
 
-# Função para exibir ajuda
+# help function
 show_help() {
-    echo "Uso: $0 [OPÇÕES]"
+    echo "Use: $0 [Options]"
     echo ""
-    echo "Opções:"
-    echo "  -c              Limpar diretório build antes de executar"
-    echo "  -b WIDTH        Largura do barramento (padrão: 32)"
-    echo "  -a WIDTH        Largura do endereço (padrão: 3)"
-    echo "  -p PROTOCOL     Protocolo do barramento (padrão: axi4lite)"
-    echo "  -d DIR          Diretório de build (padrão: build)"
-    echo "  -h              Mostrar esta ajuda"
+    echo "Options:"
+    echo "  -c              Clean build directory before running"
+    echo "  -b WIDTH        Bus width (default: 32)"
+    echo "  -a WIDTH        Address width (default: 3)"
+    echo "  -p PROTOCOL     Bus protocol (default: axi4lite)"
+    echo "  -d DIR          Build directory (default: build)"
+    echo "  -h              Show this help"
     echo "  --v|-vivado <\"--vivado_params\">  Pass Vivado parameters"
     echo ""
-    echo "Exemplos:"
+    echo "Examples:"
     echo "  $0 -c -b 64 -a 4 -p axi4"
     echo "  $0 -b 32 -a 3"
     echo "  $0 -c"
 }
 
-# Função para exibir erro e sair
+# function to show error and exit program
 error_exit() {
-    echo "❌ Erro na etapa: $1"
+    echo "❌ Error in step: $1"
     exit 1
 }
 
-# Função para limpar o diretório build
+# Function to clear build directory
 clean_build() {
-    echo "🧹 Limpando diretório build..."
+    echo "🧹 Cleaning build directory..."
     if [ -d "${BUILD_DIR}" ]; then
         rm -rf "${BUILD_DIR}"/*
-        echo "✅ Diretório build limpo"
+        echo "✅ Build directory cleaned"
     else
-        echo "ℹ️  Diretório build não existe, nada para limpar"
+        echo "ℹ️  Build directory does not exist, nothing to clean"
     fi
 }
 
-# Processar argumentos
+# Process arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         -c)
@@ -83,7 +83,7 @@ while [[ $# -gt 0 ]]; do
             exit 1
             ;;
         *)
-            # argumento extra inesperado
+            # unexpected argment
             echo "❌ Argumento inesperado: $1" >&2
             show_help
             exit 1
@@ -91,50 +91,50 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Executar limpeza se a flag -c foi passada
+# Perform cleanup if the -c flag was passed
 if [ "$CLEAN_FLAG" = true ]; then
     clean_build
-    echo "✅ Limpeza concluída com sucesso!"
+    echo "✅ Cleanup completed successfully!"
 fi
 
-echo "Etapa 0: Verificando/Criando estrutura de diretórios..."
-# Criar diretório build principal se não existir
+echo "Step 0: Checking/Creating directory structure..."
+# Create main build directory if it doesn't exist
 mkdir -p "${BUILD_DIR}"
 
-# Criar subdiretórios dentro de build se não existirem
+# Create subdirectories inside build if they don't exist
 for subdir in "csv" "rtl" "ipxact"; do
     dir_path="${BUILD_DIR}/${subdir}"
     if [ ! -d "${dir_path}" ]; then
-        echo "Criando diretório: ${dir_path}"
+        echo "Creating directory: ${dir_path}"
         mkdir -p "${dir_path}"
     else
-        echo "Diretório já existe: ${dir_path}"
+        echo "Directory already exists: ${dir_path}"
     fi
 done
 
-echo "🔄 Iniciando pipeline de tradução LaTeX -> RTL"
+echo "🔄 Starting LaTeX -> RTL translation pipeline"
 
-echo "Etapa 1: Convertendo LaTeX para CSV..."
+echo "Step 1: Converting LaTeX to CSV..."
 if ! python3 tools/latex2csv.py; then
-    error_exit "LaTeX para CSV"
+    error_exit "LaTeX to CSV"
 fi
 
-echo "Etapa 2: Convertendo CSV para IP-XACT (BUS_WIDTH=${BUS_WIDTH})..."
+echo "Step 2: Converting CSV to IP-XACT (BUS_WIDTH=${BUS_WIDTH})..."
 if ! python3 scripts/csv2ipxact.py -s "${BUS_WIDTH}"; then
-    error_exit "CSV para IP-XACT"
+    error_exit "CSV to IP-XACT"
 fi
 
-echo "Etapa 3: Gerando RTL a partir do IP-XACT..."
+echo "Step 3: Generating RTL from IP-XACT..."
 if ! bash scripts/ipxact2rtl.sh; then
-    error_exit "IP-XACT para RTL"
+    error_exit "IP-XACT to RTL"
 fi
 
-echo "Etapa 4: Gerando conexão com barramento para o RegMap (BUS_WIDTH=${BUS_WIDTH}, ADDR_WIDTH=${ADDR_WIDTH}, BUS_PROTOCOL=${BUS_PROTOCOL})..."
+echo "Step 4: Generating bus connection for the RegMap (BUS_WIDTH=${BUS_WIDTH}, ADDR_WIDTH=${ADDR_WIDTH}, BUS_PROTOCOL=${BUS_PROTOCOL})..."
 if ! python3 scripts/gen_bus_csr.py --bus "${BUS_PROTOCOL}" --data-width "${BUS_WIDTH}" --addr-width "${ADDR_WIDTH}"; then
     error_exit "Generate bus logic"
 fi
 
-echo "Etapa 5: Integração com Vivado"
+echo "Step 5: Vivado integration"
 ./scripts/xrun.sh -top ${BUS_PROTOCOL}_tb -vivado ${VIVADO_PARMS}
 
-echo "✅ Pipeline concluído com sucesso!"
+echo "✅ Pipeline finish with success!"
