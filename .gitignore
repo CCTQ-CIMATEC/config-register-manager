@@ -3,5 +3,6 @@ build/csv/*
 build/ipxact/*
 build/rtl/*
 !.gitkeep
+scripts/__pycache__/*
 tools/__pycache__/*
 tools/utils/__pycache__/*

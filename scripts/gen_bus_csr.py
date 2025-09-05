@@ -14,7 +14,6 @@ class APB4RTLGenerator:
         self.data_width = data_width
         self.addr_width = addr_width
         self.build_dir = Path("build/rtl")
-        self.src_dir = Path("src/rtl/apb")
         self.source_files = [
             "CSR_IP_Map_pkg.sv",
             "CSR_IP_Map.sv"
