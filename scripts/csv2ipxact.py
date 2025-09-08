@@ -3,8 +3,9 @@
 CSV to IP-XACT 2022 Converter
 Converts CSR register tables from CSV format to IP-XACT 2022 XML format
 """
-import sys
+
 import csv
+import os
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import re
@@ -16,7 +17,7 @@ from tools.ipxact_builder import IPXACT2022Generator
 
 
 def read_csv_data(csv_file):
-    """Read CSV data, validate structure and return structured data"""
+    """Read CSV data and return structured data"""
     registers_data = {}
 
     # Definition of required columns (expected in the CSV)
@@ -53,12 +54,14 @@ def read_csv_data(csv_file):
             raise ValueError(f"CSV {csv_file} contains unexpected columns: {extra}")
 
         for row in reader:
+            # Convert keys to lowercase for consistency
             row_data = {k.lower().strip(): v.strip() for k, v in row.items()}
-
+            
             register = row_data.get('register', '').strip().lower()
+
             if not register:
                 continue
-
+                
             if register not in registers_data:
                 registers_data[register] = {
                     'offset': row_data.get('offset', '0x0000'),
@@ -77,38 +80,31 @@ def read_csv_data(csv_file):
             field_data = {
                 'field': row_data.get('field', '').lower(),
                 'bits': row_data.get('bits', ''),
-                'access_policy': access_policy,
-                'volatile': row_data.get('volatile', 'false').lower(),
+                'access_policy': row_data.get('access_policy', row_data.get('access policy', 'RW')),
+                'volatile': row_data.get('volatile', 'false'),
                 'reset': row_data.get('reset', '0'),
                 'description': row_data.get('description', ''),
-                'enum_values': row_data.get('enum_values', row_data.get('enum values', ''))
+                'enum_values': row_data.get('enum values', row_data.get('enum_values', ''))
             }
-
+            
             registers_data[register]['fields'].append(field_data)
-
+    
     return registers_data
-
 
 def convert_all_csv_to_ipxact(bus_size="32"):
     """Convert all CSV files to a single IP-XACT XML file"""
     
-    build_path_csv    = Path("build/csv")
-    build_path_ipxact = Path("build/ipxact")
-    csv_files = list(build_path_csv.glob('RegisterMap_*.csv'))
 
     base_addresses = {}
     with open ("build/csv/table_main.csv", mode="r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            print(f"{row}")
             row["IP"] = re.sub("IP ", "IP-", row["IP"])
             row["Base Address"] = re.sub(" ", "", row["Base Address"])
             base_addresses[row["IP"]] = row["Base Address"]
             
-    print(f" CSV: {csv_files} \n")
-
     if not csv_files:
-        print(f"No IPs specific CSV files found in directory: {build_path_csv}")
+        print(f"No IPs specific CSV files found in directory: {input_path}")
         return False
     
     print(f"Found {len(csv_files)} CSV files")
@@ -160,13 +156,12 @@ def convert_all_csv_to_ipxact(bus_size="32"):
             
             print(f"  Created address block: {csv_name}")
             
-        except ValueError as e:
+        except Exception as e:
             print(f"Error processing {csv_file.name}: {e}")
             raise  # <-- immediate interruption if CSV is invalid
     
     # Write the combined XML file
-    output_file = build_path_ipxact / "ipMap.xml"
-
+    output_file = output_path / "ipMap.xml"
     try:
         # Pretty print the XML
         xml_str = ET.tostring(root, encoding='unicode')
@@ -186,7 +181,6 @@ def convert_all_csv_to_ipxact(bus_size="32"):
     except Exception as e:
         print(f"Error writing XML file: {e}")
         return False
-
 
 def main():
     parser = argparse.ArgumentParser(description='Convert CSV register tables to IP-XACT 2022 XML format')
