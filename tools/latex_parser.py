@@ -1,6 +1,4 @@
 import re
-import os
-from pathlib import Path
 
 def extract_table_with_label(latex_content: str, target_label: str) -> str | None:
     """
