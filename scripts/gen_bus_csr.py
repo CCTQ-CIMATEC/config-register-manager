@@ -12,10 +12,6 @@ class APB4RTLGenerator:
         self.data_width = data_width
         self.addr_width = addr_width
         self.build_dir = Path("build/rtl")
-        self.source_files = [
-            "CSR_IP_Map_pkg.sv",
-            "CSR_IP_Map.sv"
-        ]
         
     def create_directories(self):
         """Cria o diretório build/rtl se não existir"""
@@ -177,22 +173,10 @@ endmodule
         file_name = f"{self.bus_type}_csr_top.sv"
         output_file = self.build_dir / file_name
         
-        self.source_files.append(file_name)
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(rtl_content)
         
         print(f"✓ Arquivo RTL gerado: {output_file}")
-        return output_file
-    
-    def write_srclist_file(self):
-        """Escreve o arquivo srclist gerado"""
-        output_file = self.build_dir / f"{self.bus_type}_at.srclist"
- 
-        with open(output_file, 'w', encoding='utf-8') as f:
-            for file_name in self.source_files:
-                f.write("${CONFIG_REGISTER_MANAGER}/build/rtl/"+file_name + '\n')
-        
-        print(f"✓ Arquivo srclist gerado: {output_file}")
         return output_file
        
     def generate_all(self):
@@ -208,9 +192,6 @@ endmodule
             
             # 2. Gerar arquivo RTL
             rtl_file = self.write_rtl_file()
- 
-            # 3. Gerar srclist
-            self.write_srclist_file()
             
             print("-" * 50)
             print("✅ Geração concluída com sucesso!")
